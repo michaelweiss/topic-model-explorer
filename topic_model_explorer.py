@@ -111,11 +111,11 @@ def topic_coocurrence_graph(min_weight, min_edges):
 	return graph
 
 def normalize(df):
-    df_new = df.copy()
-    for topic in df.columns:
-        topic_sum = df[topic].sum()
-        df_new[topic] = df[topic]/topic_sum
-    return df_new
+	df_new = df.copy()
+	for topic in df.columns:
+		topic_sum = df[topic].sum()
+		df_new[topic] = df[topic]/topic_sum
+	return df_new
 
 def document_top_topics(i):
 	lda = lda_model(url, number_of_topics)
@@ -173,8 +173,8 @@ if show_wordcloud:
 	selected_topic = st.sidebar.slider("Topic", 0, number_of_topics - 1, 0)
 	st.header("Word cloud")
 	st.markdown('''
- 		The word cloud shows the 10 most frequent words for each topic.
- 	''')
+		The word cloud shows the 10 most frequent words for each topic.
+	''')
 	wordcloud = WordCloud(background_color="white", 
 		max_font_size=28).fit_words(topic_words(selected_topic, 10))
 	plt.imshow(wordcloud, interpolation='bilinear')
@@ -187,8 +187,8 @@ show_document_topic_matrix = st.sidebar.checkbox("Show document topics", value=F
 if show_document_topic_matrix:
 	st.header("Document Topics")
 	st.markdown('''
- 		The document topic matrix shows the topic weights for each document. 
- 	''')
+		The document topic matrix shows the topic weights for each document. 
+	''')
 	dtm = document_topics_matrix()
 	corpus = load_corpus(url)
 	dtm_df = pd.DataFrame(dtm)
@@ -201,9 +201,9 @@ show_tally_topics = st.sidebar.checkbox("Show topics tally", value=False)
 
 if show_tally_topics:
 	st.header("Topics Tally")
- 	st.markdown('''
- 		This graph show the proportion of each topic across the corpus.
- 	''')
+	st.markdown('''
+		This graph show the proportion of each topic across the corpus.
+	''')
 	dtm = document_topics_matrix()
 	st.line_chart(tally_columns(dtm))
 
@@ -214,12 +214,12 @@ if show_topic_coocurrence_graph:
 	min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
 	st.header("Topic Co-occurrences")
 	st.markdown('''
- 		We consider topics to co-occur in the same document if the weight of both 
- 		topics for that document are greater than *minimum weight*. The thickness of
- 		a line in the co-occurrance graph indicates how often two topics co-occur
- 		in a document (at least *minimum edges* times). Each node corresponds to a 
- 		topic. Node size represents the total weight of the topic.
- 	''')
+		We consider topics to co-occur in the same document if the weight of both 
+		topics for that document are greater than *minimum weight*. The thickness of
+		a line in the co-occurrance graph indicates how often two topics co-occur
+		in a document (at least *minimum edges* times). Each node corresponds to a 
+		topic. Node size represents the total weight of the topic.
+	''')
 	graph = topic_coocurrence_graph(min_weight, min_edges)
 	st.graphviz_chart(graph)
 
@@ -235,16 +235,16 @@ if show_topic_coocurrence_graph:
 show_topic_trends = st.sidebar.checkbox("Show topics trends", value=False)
 
 if show_topic_trends:
- 	st.header("Topic Trends")
- 	st.markdown('''
- 		This chart shows emerging topic trends. It plots the aggregated topic weights 
- 		and the contribution of each topic by year. Note: The corpus must have a *year*
- 		column. 
- 	''')
-  	dtm = document_topics_matrix()
+	st.header("Topic Trends")
+	st.markdown('''
+		This chart shows emerging topic trends. It plots the aggregated topic weights 
+		and the contribution of each topic by year. Note: The corpus must have a *year*
+		column. 
+	''')
+	dtm = document_topics_matrix()
 	corpus = load_corpus(url)
- 	dtm_df = pd.DataFrame(dtm)
+	dtm_df = pd.DataFrame(dtm)
 	dtm_df.insert(0, "year", corpus.documents["year"])
- 	dtm_df_sum = dtm_df.groupby("year").sum()
- 	st.bar_chart(dtm_df_sum)
+	dtm_df_sum = dtm_df.groupby("year").sum()
+	st.bar_chart(dtm_df_sum)
 
