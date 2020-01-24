@@ -170,7 +170,7 @@ if show_topics:
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
 if show_wordcloud:
-	selected_topic = st.sidebar.selectbox("Topic", range(number_of_topics), 0)
+	selected_topic = st.sidebar.slider("Topic", 0, number_of_topics - 1, 0)
 	st.header("Word cloud")
 	st.markdown('''
  		The word cloud shows the 10 most frequent words for each topic.
