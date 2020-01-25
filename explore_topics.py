@@ -8,7 +8,7 @@ def topic_model():
 	print("*** Initialzing the topic model")
 	return topics.TopicModel()
 
-@st.cache
+@st.cache(allow_output_mutation=True)
 def load_corpus(url):
 	print("*** Loading corpus: {}".format(url))
 	return tm.load_corpus(url)
