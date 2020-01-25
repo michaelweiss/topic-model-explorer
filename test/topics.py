@@ -24,6 +24,12 @@ class TopicModel:
 		self.lda_ = models.LdaModel(corpus.bow(), number_of_topics)
 		return self.lda_
 
+	def show_topics(number_of_words):
+		return lda_.show_topics(num_topics=number_of_topics, 
+			num_words=number_of_words, formatted=False)
+
+#	def get_document_topics(document):
+#		return lda_.
 
 class Corpus:
 	def __init__(self, docs):

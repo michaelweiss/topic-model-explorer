@@ -26,7 +26,7 @@ def load_corpus(url):
 		print("*** Loading the corpus '{}' ***".format(url))
 		return tm.load_corpus(url)
 
-@st.cache(allow_output_mutation=True, hash_funcs={models.LdaModel: id})
+@st.cache(allow_output_mutation=True)
 def lda_model(url, number_of_topics):
 	corpus = load_corpus(url)
 	with st.spinner("Training the topic model ..."):
@@ -37,10 +37,9 @@ def lda_model(url, number_of_topics):
 
 # move this method to topics
 def topics_to_csv(number_of_words):
-	corpus = load_corpus(url)
-	lda = lda_model(url, number_of_topics)
+	lda_model(url, number_of_topics)
 	r = "topic, content\n"
-	for index, topic in lda.show_topics(num_topics=number_of_topics, 
+	for index, topic in tm.show_topics(num_topics=number_of_topics, 
 			num_words=number_of_words, formatted=False):
 		line = "topic_{},".format(index)
 		for w in topic:
