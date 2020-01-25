@@ -35,10 +35,8 @@ class TopicModel:
 #		return lda.
 
 class Corpus:
-	def __init__(self, docs):
-		self.documents = docs
-		self.tokens = []
-		self.dictionary = Dictionary([])
+	def __init__(self, documents):
+		self.documents = documents
 
 	def preprocess(self):
 		stopwords = self.read_stopwords('stopwords.txt')
