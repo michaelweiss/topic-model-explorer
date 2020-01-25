@@ -9,13 +9,13 @@ def topic_model():
 @st.cache
 def load_corpus(url):
 	print("*** Loading corpus: {}".format(url))
-	tm.load_corpus(url)
+	return tm.load_corpus(url)
 
 tm = topic_model()
 st.sidebar.title("Topic Model Explorer")
 
 url = st.sidebar.file_uploader("Corpus", type=["csv"])
 if url is not None:
-	load_corpus(url)
+	corpus = load_corpus(url)
 	st.table(tm.corpus.documents)
 

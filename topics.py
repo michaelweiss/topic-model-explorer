@@ -7,6 +7,7 @@ from gensim import models
 from gensim.corpora import Dictionary
 
 import pandas as pd
+from io import StringIO
 
 class TopicModel:
 	def __init__(self):
@@ -17,22 +18,41 @@ class TopicModel:
 		return gs.__version__
 
 	def load_corpus(self, url):
-		documents = pd.read_csv(url)
-		self.corpus = Corpus(documents)
+		if url is not None:
+			documents = pd.read_csv(url)
+			self.corpus = Corpus(documents)
+		else:
+			self.corpus = Corpus([])	# exception
 		self.corpus.preprocess()
+		return self.corpus
 
 	def fit(self, corpus, number_of_topics):
 		self.corpus = corpus
 		self.number_of_topics = number_of_topics
-		self.lda = models.LdaModel(corpus.bow(), number_of_topics)
+		self.lda = models.LdaModel(self.corpus.bow(), self.number_of_topics)
 		return self.lda
 
-	def show_topics(number_of_words):
-		return lda.show_topics(num_topics=number_of_topics, 
+	def show_topics(self, number_of_words):
+		return self.lda.show_topics(num_topics=self.number_of_topics, 
 			num_words=number_of_words, formatted=False)
 
 #	def get_document_topics(document):
 #		return lda.
+
+	def topics_to_csv(self, number_of_words):
+		r = "topic, content\n"
+		for index, topic in self.show_topics(number_of_words):
+			line = "topic_{},".format(index)
+			for w in topic:
+				line += " " + self.corpus.dictionary[int(w[0])]
+			r += line + "\n"
+		return r
+
+	def read_topics(self, csv):
+		return pd.read_csv(StringIO(csv))
+
+	def topics(self, number_of_words):
+		return self.read_topics(self.topics_to_csv(number_of_words))
 
 class Corpus:
 	def __init__(self, documents):
