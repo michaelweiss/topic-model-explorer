@@ -1,5 +1,6 @@
 import streamlit as st
 from topics import TopicModel
+from gensim import models
 
 import pandas as pd
 import numpy as np
@@ -25,7 +26,7 @@ def load_corpus(url):
 		print("*** Loading the corpus '{}' ***".format(url))
 		return tm.load_corpus(url)
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, hash_funcs={models.LdaModel: id})
 def lda_model(url, number_of_topics):
 	corpus = load_corpus(url)
 	with st.spinner("Training the topic model ..."):
