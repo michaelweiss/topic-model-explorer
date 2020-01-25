@@ -19,10 +19,10 @@ class TopicModel:
 		return corpus
 
 	def fit(self, corpus, number_of_topics):
-		self._corpus = corpus
-		self._number_of_topics = number_of_topics
-		self._lda = models.LdaModel(corpus.bow(), number_of_topics)
-		return self._lda
+		self.corpus_ = corpus
+		self.number_of_topics_ = number_of_topics
+		self.lda_ = models.LdaModel(corpus.bow(), number_of_topics)
+		return self.lda_
 
 	# show_topics(number_of_words)
 	# get_document_topics(document)
