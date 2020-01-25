@@ -9,27 +9,30 @@ from gensim.corpora import Dictionary
 import pandas as pd
 
 class TopicModel:
+	def __init__(self):
+		print("*** init TopicModel")
+		self.corpus = None
+
 	def gensim_version(self):
 		return gs.__version__
 
 	def load_corpus(self, url):
 		documents = pd.read_csv(url)
-		corpus = Corpus(documents)
-		corpus.preprocess()
-		return corpus
+		self.corpus = Corpus(documents)
+		self.corpus.preprocess()
 
 	def fit(self, corpus, number_of_topics):
-		self.corpus_ = corpus
-		self.number_of_topics_ = number_of_topics
-		self.lda_ = models.LdaModel(corpus.bow(), number_of_topics)
-		return self.lda_
+		self.corpus = corpus
+		self.number_of_topics = number_of_topics
+		self.lda = models.LdaModel(corpus.bow(), number_of_topics)
+		return self.lda
 
 	def show_topics(number_of_words):
-		return lda_.show_topics(num_topics=number_of_topics, 
+		return lda.show_topics(num_topics=number_of_topics, 
 			num_words=number_of_words, formatted=False)
 
 #	def get_document_topics(document):
-#		return lda_.
+#		return lda.
 
 class Corpus:
 	def __init__(self, docs):
