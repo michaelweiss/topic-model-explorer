@@ -147,23 +147,29 @@ def topic_words(k, number_of_words):
 st.sidebar.title("Topic Model Explorer")
 tm = TopicModel()
 
-url = st.sidebar.text_input("Corpus (URL to a CSV file)", "abstracts.csv")
+url = st.sidebar.file_uploader("Corpus", type="csv")
 show_documents = st.sidebar.checkbox("Show documents", value=True)
 
 if show_documents:
 	st.header("Corpus")
-	corpus = load_corpus(url)
-	st.dataframe(corpus.documents)
+	if url is not None:
+		corpus = load_corpus(url)
+		st.dataframe(corpus.documents)
+	else:
+		st.markdown("Please upload a corpus.")
 
 number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
-show_topics = st.sidebar.checkbox("Show topics", value=True)
+show_topics = st.sidebar.checkbox("Show topics", value=False)
 
 if show_topics:
 	st.header("Topics")
-	df = topics(5)
-	st.table(df)
-	download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
-		"Download topic keywords")
+	if url is not None:	
+		df = topics(5)
+		st.table(df)
+		download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
+			"Download topic keywords")
+	else:
+		st.markdown("Please upload a corpus.")
 
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
