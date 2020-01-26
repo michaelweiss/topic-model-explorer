@@ -1,5 +1,5 @@
 import streamlit as st
-import topics
+from topics import TopicModel
 
 import pandas as pd
 import numpy as np
@@ -14,13 +14,11 @@ import matplotlib.pyplot as plt
 
 import graphviz as graphviz
 
-@st.cache(allow_output_mutation=True)
-def topic_model():
-	return topics.TopicModel()
+from io import StringIO
 
 @st.cache(allow_output_mutation=True)
 def load_corpus(url):
-	print("*** Loading corpus: {}".format(url))
+	print("*** Loading the corpus: {}".format(url))
 	return tm.load_corpus(url)
 
 @st.cache(allow_output_mutation=True)
@@ -31,6 +29,26 @@ def lda_model(url, number_of_topics):
 		lda = tm.fit(corpus, number_of_topics)
 		print("*** Training completed ***")
 		return lda
+
+# move this method to topics
+def topics_to_csv(number_of_words):
+	print("*** Topics to csv")
+	corpus = load_corpus(url)
+	lda = lda_model(url, number_of_topics)
+	r = "topic, content\n"
+	for index, topic in lda.show_topics(num_topics=number_of_topics, 
+			num_words=number_of_words, formatted=False):
+		line = "topic_{},".format(index)
+		for w in topic:
+			line += " " + corpus.dictionary[int(w[0])]
+		r += line + "\n"
+	return r
+
+def read_topics(csv):
+	return pd.read_csv(StringIO(csv))
+
+def topics(number_of_words):
+	return read_topics(topics_to_csv(number_of_words))
 
 def bow_top_keywords(bag_of_words, dictionary):
 	keywords = []
@@ -124,10 +142,9 @@ def topic_words(k, number_of_words):
 	return {}
 
 st.sidebar.title("Topic Model Explorer")
-tm = topic_model()
+tm = TopicModel()
 
 url = st.sidebar.text_input("Corpus (URL to a CSV file)", "abstracts.csv")
-
 show_documents = st.sidebar.checkbox("Show documents", value=True)
 
 if show_documents:
@@ -140,8 +157,7 @@ show_topics = st.sidebar.checkbox("Show topics", value=True)
 
 if show_topics:
 	st.header("Topics")
-	lda_model(url, number_of_topics)
-	st.table(tm.topics(5))
+	st.table(topics(5))
 
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
