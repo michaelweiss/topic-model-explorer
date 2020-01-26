@@ -10,9 +10,6 @@ import pandas as pd
 from io import StringIO
 
 class TopicModel:
-	def __init__(self):
-		print("*** Initialize TopicModel")
-
 	def gensim_version(self):
 		return gs.__version__
 
@@ -20,42 +17,52 @@ class TopicModel:
 		if url is not None:
 			print("*** Reading the corpus")
 			documents = pd.read_csv(url)
-			self.corpus = Corpus(documents)
+			corpus = Corpus(documents)
+			corpus.preprocess()
+			return corpus
 		else:
 			print("*** No url provided")
-			self.corpus = Corpus([])	# exception
-		self.corpus.preprocess()
-		return self.corpus
+			corpus = Corpus([])	# exception
+			return corpus
 
 	def fit(self, corpus, number_of_topics):
-		self.corpus = corpus
-		self.number_of_topics = number_of_topics
-		self.lda = models.LdaModel(self.corpus.bow(), self.number_of_topics)
-		return self.lda
+		return LDA(models.LdaModel(corpus.bow(), number_of_topics))
 
-	def show_topics(self, number_of_words):
-		return self.lda.show_topics(num_topics=self.number_of_topics, 
+	# def show_topics(self, number_of_words):
+	# 	return self.lda.show_topics(num_topics=self.number_of_topics, 
+	# 		num_words=number_of_words, formatted=False)
+
+	# def get_document_topics(document):
+	# return lda.
+
+	# def topics_to_csv(self, number_of_words):
+	# 	print("*** TopicModel.Topics to csv")
+	# 	print(self.lda)
+	# 	r = "topic, content\n"
+	# 	for index, topic in self.show_topics(number_of_words):
+	# 		line = "topic_{},".format(index)
+	# 		for w in topic:
+	# 			line += " " + self.corpus.dictionary[int(w[0])]
+	# 		r += line + "\n"
+	# 	return r
+
+	# def read_topics(self, csv):
+	# 	return pd.read_csv(StringIO(csv))
+
+	# def topics(self, number_of_words):
+	# 	return self.read_topics(self.topics_to_csv(number_of_words))
+
+class LDA:
+	def __init__(self, lda):
+		self.lda = lda
+
+	def show_topics(self, number_of_topics, number_of_words):
+		return self.lda.show_topics(num_topics=number_of_topics, 
 			num_words=number_of_words, formatted=False)
 
-#	def get_document_topics(document):
-#		return lda.
+	def get_document_topics(self, document_bow):
+		return self.lda.get_document_topics(document_bow)
 
-	def topics_to_csv(self, number_of_words):
-		print("*** TopicModel.Topics to csv")
-		print(self.lda)
-		r = "topic, content\n"
-		for index, topic in self.show_topics(number_of_words):
-			line = "topic_{},".format(index)
-			for w in topic:
-				line += " " + self.corpus.dictionary[int(w[0])]
-			r += line + "\n"
-		return r
-
-	def read_topics(self, csv):
-		return pd.read_csv(StringIO(csv))
-
-	def topics(self, number_of_words):
-		return self.read_topics(self.topics_to_csv(number_of_words))
 
 class Corpus:
 	def __init__(self, documents):

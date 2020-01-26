@@ -32,12 +32,10 @@ def lda_model(url, number_of_topics):
 
 # move this method to topics
 def topics_to_csv(number_of_words):
-	print("*** Topics to csv")
 	corpus = load_corpus(url)
 	lda = lda_model(url, number_of_topics)
 	r = "topic, content\n"
-	for index, topic in lda.show_topics(num_topics=number_of_topics, 
-			num_words=number_of_words, formatted=False):
+	for index, topic in lda.show_topics(number_of_topics, number_of_words):
 		line = "topic_{},".format(index)
 		for w in topic:
 			line += " " + corpus.dictionary[int(w[0])]
@@ -127,13 +125,11 @@ def sort_by_topic(dtm, k):
 	col_k = [row[k] for row in dtm]
 	return np.argsort(-np.array(col_k))
 
-# move this method into topics
 def topic_words(k, number_of_words):
 	r = {}
 	corpus = load_corpus(url)
 	lda = lda_model(url, number_of_topics)
-	for index, topic in lda.show_topics(num_topics=number_of_topics, 
-			num_words=number_of_words, formatted=False):
+	for index, topic in lda.show_topics(number_of_topics, number_of_words):
 		if index == k:
 			for w in topic:
 				s = corpus.dictionary[int(w[0])]
