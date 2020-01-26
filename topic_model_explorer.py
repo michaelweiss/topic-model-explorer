@@ -8,6 +8,7 @@ import heapq
 import operator
 import math
 import itertools
+import base64
 
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -47,6 +48,12 @@ def read_topics(csv):
 
 def topics(number_of_words):
 	return read_topics(topics_to_csv(number_of_words))
+
+def download_link(dataframe, file_name, title="Download"):
+    csv = dataframe.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+    href = "<a href='data:file/csv;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
+    st.markdown(href, unsafe_allow_html=True)
 
 def bow_top_keywords(bag_of_words, dictionary):
 	keywords = []
@@ -153,7 +160,10 @@ show_topics = st.sidebar.checkbox("Show topics", value=True)
 
 if show_topics:
 	st.header("Topics")
-	st.table(topics(5))
+	df = topics(5)
+	st.table(df)
+	download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
+		"Download topic keywords")
 
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
@@ -184,6 +194,8 @@ if show_document_topic_matrix:
 		dtm_df.insert(0, "year", corpus.documents["year"])
 	dtm_df.insert(0, "name", corpus.documents["name"])
 	st.dataframe(dtm_df)
+	download_link(dtm_df, "document-topics-{}.csv".format(number_of_topics),
+		"Download document topics")
 
 show_tally_topics = st.sidebar.checkbox("Show topics tally", value=False)
 

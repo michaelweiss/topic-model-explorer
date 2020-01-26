@@ -63,7 +63,6 @@ class LDA:
 	def get_document_topics(self, document_bow):
 		return self.lda.get_document_topics(document_bow)
 
-
 class Corpus:
 	def __init__(self, documents):
 		self.documents = documents
