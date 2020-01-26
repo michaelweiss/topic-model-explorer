@@ -16,7 +16,6 @@ import graphviz as graphviz
 
 @st.cache(allow_output_mutation=True)
 def topic_model():
-	print("*** Initialzing the topic model")
 	return topics.TopicModel()
 
 @st.cache(allow_output_mutation=True)
@@ -133,8 +132,8 @@ show_documents = st.sidebar.checkbox("Show documents", value=True)
 
 if show_documents:
 	st.header("Corpus")
-	load_corpus(url)
-	st.dataframe(tm.corpus.documents)
+	corpus = load_corpus(url)
+	st.dataframe(corpus.documents)
 
 number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
 show_topics = st.sidebar.checkbox("Show topics", value=True)

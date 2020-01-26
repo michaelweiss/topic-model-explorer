@@ -11,17 +11,18 @@ from io import StringIO
 
 class TopicModel:
 	def __init__(self):
-		print("*** init TopicModel")
-		self.corpus = None
+		print("*** Initialize TopicModel")
 
 	def gensim_version(self):
 		return gs.__version__
 
 	def load_corpus(self, url):
 		if url is not None:
+			print("*** Reading the corpus")
 			documents = pd.read_csv(url)
 			self.corpus = Corpus(documents)
 		else:
+			print("*** No url provided")
 			self.corpus = Corpus([])	# exception
 		self.corpus.preprocess()
 		return self.corpus
@@ -40,6 +41,8 @@ class TopicModel:
 #		return lda.
 
 	def topics_to_csv(self, number_of_words):
+		print("*** TopicModel.Topics to csv")
+		print(self.lda)
 		r = "topic, content\n"
 		for index, topic in self.show_topics(number_of_words):
 			line = "topic_{},".format(index)

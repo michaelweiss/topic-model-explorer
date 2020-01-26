@@ -1,42 +1,38 @@
 import streamlit as st
 from topics import TopicModel
-from gensim import models
 
 import pandas as pd
 import numpy as np
 
+import heapq
+import operator
+import math
+import itertools
+
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-import heapq
-import operator
+import graphviz as graphviz
 
 from io import StringIO
 
-import graphviz as graphviz
-import itertools
-
-import math
-
-tm = TopicModel()
-
 @st.cache(allow_output_mutation=True)
 def load_corpus(url):
-	with st.spinner("Loading the corpus ..."):
-		print("*** Loading the corpus '{}' ***".format(url))
-		return tm.load_corpus(url)
+	print("*** Loading the corpus: {}".format(url))
+	return tm.load_corpus(url)
 
 @st.cache(allow_output_mutation=True)
 def lda_model(url, number_of_topics):
 	corpus = load_corpus(url)
 	with st.spinner("Training the topic model ..."):
-		print("*** Training the topic model ***")
+		print("*** Training the topic model: {}".format(number_of_topics))
 		lda = tm.fit(corpus, number_of_topics)
 		print("*** Training completed ***")
 		return lda
 
 # move this method to topics
 def topics_to_csv(number_of_words):
+	print("*** Topics to csv")
 	corpus = load_corpus(url)
 	lda = lda_model(url, number_of_topics)
 	r = "topic, content\n"
@@ -146,7 +142,7 @@ def topic_words(k, number_of_words):
 	return {}
 
 st.sidebar.title("Topic Model Explorer")
-# st.sidebar.markdown("Streamlit {}".format(st.__version__))
+tm = TopicModel()
 
 url = st.sidebar.text_input("Corpus (URL to a CSV file)", "abstracts.csv")
 show_documents = st.sidebar.checkbox("Show documents", value=True)
