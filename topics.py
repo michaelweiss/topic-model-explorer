@@ -67,6 +67,7 @@ class LDA:
 class Corpus:
 	def __init__(self, documents):
 		self.documents = self.to_ascii(documents)
+		self.stopwords = self.read_stopwords("stopwords-en.txt")
 
 	def to_ascii(self, documents):
 		# replace non-ascii symbols left by text processing software
@@ -75,16 +76,16 @@ class Corpus:
 		return documents
 
 	def preprocess(self):
-		stopwords = self.read_stopwords('stopwords.txt')
+		print(self.stopwords)
 		self.tokens = [[word for word in self.preprocess_document(document) 
-				if word not in stopwords] 
+				if word not in self.stopwords] 
 			for document in self.documents['content']]
 		self.dictionary = Dictionary(self.tokens)
 
-	@st.cache
 	def read_stopwords(self, file):
 		file = open(file, 'r')
-		return file.read().split('\n')
+		self.stopwords = file.read().split('\n')
+		return self.stopwords
 
 	def preprocess_document(self, document):
 		return pp.strip_punctuation(document).lower().split()
