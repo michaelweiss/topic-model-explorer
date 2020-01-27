@@ -169,8 +169,6 @@ if show_topics:
 		st.table(df)
 		download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
-	else:
-		st.markdown("Please upload a corpus.")
 
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
@@ -251,7 +249,8 @@ if show_topic_trends:
 	dtm = document_topics_matrix()
 	corpus = load_corpus(url)
 	dtm_df = pd.DataFrame(dtm)
-	dtm_df.insert(0, "year", corpus.documents["year"])
-	dtm_df_sum = dtm_df.groupby("year").sum()
-	st.bar_chart(dtm_df_sum)
+	if "year" in corpus.documents:
+		dtm_df.insert(0, "year", corpus.documents["year"])
+		dtm_df_sum = dtm_df.groupby("year").sum()
+		st.bar_chart(dtm_df_sum)
 

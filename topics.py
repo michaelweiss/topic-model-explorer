@@ -76,7 +76,6 @@ class Corpus:
 		return documents
 
 	def preprocess(self):
-		print(self.stopwords)
 		self.tokens = [[word for word in self.preprocess_document(document) 
 				if word not in self.stopwords] 
 			for document in self.documents['content']]
