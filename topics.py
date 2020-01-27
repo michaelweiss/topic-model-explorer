@@ -8,6 +8,7 @@ from gensim.corpora import Dictionary
 
 import pandas as pd
 from io import StringIO
+import re
 
 class TopicModel:
 	def gensim_version(self):
@@ -65,7 +66,13 @@ class LDA:
 
 class Corpus:
 	def __init__(self, documents):
-		self.documents = documents
+		self.documents = self.to_ascii(documents)
+
+	def to_ascii(self, documents):
+		# replace non-ascii symbols left by text processing software
+		documents['content'] = [re.sub(r'[^A-Za-z0-9,\.?!]+', ' ', document)
+			for document in documents['content']]
+		return documents
 
 	def preprocess(self):
 		stopwords = self.read_stopwords('stopwords.txt')
