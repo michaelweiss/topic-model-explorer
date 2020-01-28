@@ -24,7 +24,7 @@ def load_corpus(url):
 	return tm.load_corpus(url)
 
 @st.cache(allow_output_mutation=True)
-def lda_model(url, number_of_topics):
+def lda_model(url, stopwords, number_of_topics):
 	corpus = load_corpus(url)
 	with st.spinner("Training the topic model ..."):
 		print("*** Training the topic model: {}".format(number_of_topics))
@@ -35,7 +35,7 @@ def lda_model(url, number_of_topics):
 # move this method to topics
 def topics_to_csv(number_of_words):
 	corpus = load_corpus(url)
-	lda = lda_model(url, number_of_topics)
+	lda = lda_model(url, stopwords, number_of_topics)
 	r = "topic, content\n"
 	for index, topic in lda.show_topics(number_of_topics, number_of_words):
 		line = "topic_{},".format(index)
@@ -51,10 +51,13 @@ def topics(number_of_words):
 	return read_topics(topics_to_csv(number_of_words))
 
 def download_link(dataframe, file_name, title="Download"):
-    csv = dataframe.to_csv(index=False)
-    b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-    href = "<a href='data:file/csv;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
-    st.markdown(href, unsafe_allow_html=True)
+	csv = dataframe.to_csv(index=False)
+	download_link_from_csv(csv, file_name, title)
+
+def download_link_from_csv(csv, file_name, title="Download"):
+	b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+	href = "<a href='data:file/csv;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
+	st.markdown(href, unsafe_allow_html=True)
 
 def bow_top_keywords(bag_of_words, dictionary):
 	keywords = []
@@ -64,7 +67,7 @@ def bow_top_keywords(bag_of_words, dictionary):
 
 def document_topics(i):
 	corpus = load_corpus(url)
-	lda = lda_model(url, number_of_topics)
+	lda = lda_model(url, stopwords, number_of_topics)
 	return lda.get_document_topics(corpus.documents[i])
 	# return [bow_top_keywords(document, dictionary) for document in corpus]
 	# return lda[corpus[i]]
@@ -77,7 +80,7 @@ def topics_sparse_to_full(topics):
 
 def document_topics_matrix():
 	corpus = load_corpus(url)
-	lda = lda_model(url, number_of_topics)
+	lda = lda_model(url, stopwords, number_of_topics)
 	dtm = []
 	for document_bow in corpus.bow():
 		dtm.append(topics_sparse_to_full(lda.get_document_topics(document_bow)))
@@ -121,7 +124,7 @@ def normalize(df):
 	return df_new
 
 def document_top_topics(i):
-	lda = lda_model(url, number_of_topics)
+	lda = lda_model(url, stopwords, number_of_topics)
 	return np.argsort(-np.array(topics_sparse_to_full(lda.get_document_topics)))	
 
 # sum document frequencies for each topic and normalize
@@ -136,7 +139,7 @@ def sort_by_topic(dtm, k):
 def topic_words(k, number_of_words):
 	r = {}
 	corpus = load_corpus(url)
-	lda = lda_model(url, number_of_topics)
+	lda = lda_model(url, stopwords, number_of_topics)
 	for index, topic in lda.show_topics(number_of_topics, number_of_words):
 		if index == k:
 			for w in topic:
@@ -149,6 +152,15 @@ st.sidebar.title("Topic Model Explorer")
 tm = TopicModel()
 
 url = st.sidebar.file_uploader("Corpus", type="csv")
+
+stopwords = st.sidebar.text_area("Stopwords (one per line)")
+update_stopwords = st.sidebar.button("Update stopwords")
+
+if update_stopwords:
+	if url is not None:
+		corpus = load_corpus(url)
+		corpus.update_stopwords(stopwords)
+
 show_documents = st.sidebar.checkbox("Show documents", value=True)
 
 if show_documents:
@@ -156,6 +168,8 @@ if show_documents:
 	if url is not None:
 		corpus = load_corpus(url)
 		st.dataframe(corpus.documents)
+		download_link_from_csv("\n".join(corpus.stopwords), "stopwords.txt",
+			"Download stopwords")
 	else:
 		st.markdown("Please upload a corpus.")
 
