@@ -268,3 +268,21 @@ if show_topic_trends:
 		dtm_df_sum = dtm_df.groupby("year").sum()
 		st.bar_chart(dtm_df_sum)
 
+show_keyword_matches = st.sidebar.checkbox("Show keyword matches", value=False)
+if show_keyword_matches:
+	keywords = st.sidebar.text_input("Keywords")
+	st.header("Keyword Matches")
+	st.markdown('''
+		Show which documents contatin how many of the keywords specified.
+	''')
+	if url is not None and keywords != "":
+		corpus = load_corpus(url)
+		list_of_keywords = keywords.split(" ")
+		df = corpus.documents.copy()
+		for keyword in list_of_keywords:
+			df[keyword] = [keyword in document.lower() for document
+				in corpus.documents['content']]
+		df['score'] = df[list_of_keywords].sum(axis=1)
+		st.dataframe(df)
+
+
