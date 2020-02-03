@@ -169,6 +169,10 @@ if show_documents:
 	st.header("Corpus")
 	if url is not None:
 		corpus = load_corpus(url)
+		if('name' not in corpus.documents or 'content' not in corpus.documents):
+			st.markdown('''
+		The corpus must have a *name* and a *content* column.
+			''')
 		st.dataframe(corpus.documents)
 		download_link_from_csv("\n".join(corpus.stopwords), "stopwords.txt",
 			"Download stopwords")
@@ -181,10 +185,13 @@ show_topics = st.sidebar.checkbox("Show topics", value=False)
 if show_topics:
 	st.header("Topics")
 	if url is not None:	
+		corpus = load_corpus(url)	# needed for caching purposes (check)
 		df = topics(5)
 		st.table(df)
 		download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
+	else:
+		st.markdown("No corpus.")
 
 # show_correlation = st.sidebar.checkbox("Show correlation between topics and documents", value=False)
 # if show_correlation:
@@ -197,60 +204,72 @@ if show_topics:
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
 if show_wordcloud:
-	selected_topic = st.sidebar.slider("Topic", 0, number_of_topics - 1, 0)
 	st.header("Word cloud")
-	st.markdown('''
-		The word cloud shows the 10 most frequent words for each topic.
-	''')
-	wordcloud = WordCloud(background_color="white", 
-		max_font_size=28).fit_words(topic_words(selected_topic, 10))
-	plt.imshow(wordcloud, interpolation='bilinear')
-	plt.axis("off")
-	plt.show()
-	st.pyplot()
+	if url is not None:
+		selected_topic = st.sidebar.slider("Topic", 0, number_of_topics - 1, 0)
+		st.markdown('''
+			The word cloud shows the 10 most frequent words for each topic.
+		''')
+		wordcloud = WordCloud(background_color="white", 
+			max_font_size=28).fit_words(topic_words(selected_topic, 10))
+		plt.imshow(wordcloud, interpolation='bilinear')
+		plt.axis("off")
+		plt.show()
+		st.pyplot()
+	else:
+		st.markdown("No corpus.")
 
 show_document_topic_matrix = st.sidebar.checkbox("Show document topics", value=False)
 
 if show_document_topic_matrix:
 	st.header("Document Topics")
-	st.markdown('''
-		The document topic matrix shows the topic weights for each document. 
-	''')
-	dtm = document_topics_matrix()
-	corpus = load_corpus(url)
-	dtm_df = pd.DataFrame(dtm)
-	if "year" in corpus.documents:
-		dtm_df.insert(0, "year", corpus.documents["year"])
-	dtm_df.insert(0, "name", corpus.documents["name"])
-	st.dataframe(dtm_df)
-	download_link(dtm_df, "document-topics-{}.csv".format(number_of_topics),
-		"Download document topics")
+	if url is not None:
+		st.markdown('''
+			The document topic matrix shows the topic weights for each document. 
+		''')
+		dtm = document_topics_matrix()
+		corpus = load_corpus(url)
+		dtm_df = pd.DataFrame(dtm)
+		if "year" in corpus.documents:
+			dtm_df.insert(0, "year", corpus.documents["year"])
+		dtm_df.insert(0, "name", corpus.documents["name"])
+		st.dataframe(dtm_df)
+		download_link(dtm_df, "document-topics-{}.csv".format(number_of_topics),
+			"Download document topics")
+	else:
+		st.markdown("No corpus.")
 
 show_tally_topics = st.sidebar.checkbox("Show topics tally", value=False)
 
 if show_tally_topics:
 	st.header("Topics Tally")
-	st.markdown('''
-		This graph show the proportion of each topic across the corpus.
-	''')
-	dtm = document_topics_matrix()
-	st.line_chart(tally_columns(dtm))
+	if url is not None:
+		st.markdown('''
+			This graph show the proportion of each topic across the corpus.
+		''')
+		dtm = document_topics_matrix()
+		st.line_chart(tally_columns(dtm))
+	else:
+		st.markdown("No corpus.")
 
 show_topic_coocurrence_graph = st.sidebar.checkbox("Show topic co-occurrences", value=False)
 
 if show_topic_coocurrence_graph:
-	min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.3, value=0.1)
-	min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
 	st.header("Topic Co-occurrences")
-	st.markdown('''
-		We consider topics to co-occur in the same document if the weight of both 
-		topics for that document are greater than *minimum weight*. The thickness of
-		a line in the co-occurrance graph indicates how often two topics co-occur
-		in a document (at least *minimum edges* times). Each node corresponds to a 
-		topic. Node size represents the total weight of the topic.
-	''')
-	graph = topic_coocurrence_graph(min_weight, min_edges)
-	st.graphviz_chart(graph)
+	if url is not None:
+		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.3, value=0.1)
+		min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
+		st.markdown('''
+			We consider topics to co-occur in the same document if the weight of both 
+			topics for that document are greater than *minimum weight*. The thickness of
+			a line in the co-occurrance graph indicates how often two topics co-occur
+			in a document (at least *minimum edges* times). Each node corresponds to a 
+			topic. Node size represents the total weight of the topic.
+		''')
+		graph = topic_coocurrence_graph(min_weight, min_edges)
+		st.graphviz_chart(graph)
+	else:
+		st.markdown("No corpus.")
 
 # show_sorted_topics = st.sidebar.checkbox("Show sorted topics", value=False)
 
@@ -265,25 +284,28 @@ show_topic_trends = st.sidebar.checkbox("Show topics trends", value=False)
 
 if show_topic_trends:
 	st.header("Topic Trends")
-	st.markdown('''
-		This chart shows emerging topic trends. It plots the aggregated topic weights 
-		and the contribution of each topic by year. Note: The corpus must have a *year*
-		column. 
-	''')
-	dtm = document_topics_matrix()
-	corpus = load_corpus(url)
-	dtm_df = pd.DataFrame(dtm)
-	if "year" in corpus.documents:
-		dtm_df.insert(0, "year", corpus.documents["year"])
-		dtm_df_sum = dtm_df.groupby("year").sum()
-		st.bar_chart(dtm_df_sum)
+	if url is not None:
+		st.markdown('''
+			This chart shows emerging topic trends. It plots the aggregated topic weights 
+			and the contribution of each topic by year. Note: The corpus must have a *year*
+			column. 
+		''')
+		dtm = document_topics_matrix()
+		corpus = load_corpus(url)
+		dtm_df = pd.DataFrame(dtm)
+		if "year" in corpus.documents:
+			dtm_df.insert(0, "year", corpus.documents["year"])
+			dtm_df_sum = dtm_df.groupby("year").sum()
+			st.bar_chart(dtm_df_sum)
+	else:
+		st.markdown("No corpus.")
 
 show_keyword_matches = st.sidebar.checkbox("Show keyword matches", value=False)
 if show_keyword_matches:
 	keywords = st.sidebar.text_input("Keywords")
 	st.header("Keyword Matches")
 	st.markdown('''
-		Show which documents contains how many of the keywords specified.
+		Show which documents contain how many of the keywords specified.
 	''')
 	if url is not None and keywords != "":
 		corpus = load_corpus(url)
@@ -294,5 +316,7 @@ if show_keyword_matches:
 				in corpus.documents['content']]
 		df['score'] = df[list_of_keywords].sum(axis=1)
 		st.dataframe(df)
+	else:
+		st.markdown("No corpus or missing keywords.")
 
 
