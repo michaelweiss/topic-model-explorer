@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import streamlit as st
 from topics import TopicModel
 
@@ -184,13 +186,13 @@ if show_topics:
 		download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
 
-show_correlation = st.sidebar.checkbox("Show correlation between topics and documents", value=False)
-if show_correlation:
-	if url is not None:
-		st.header("Correlation between topics and documents")
-		corpus = load_corpus(url)
-		st.markdown("Correlation for %d topics: %.2f" % 
-			number_of_topics, tm.cophenet(corpus, number_of_topics))
+# show_correlation = st.sidebar.checkbox("Show correlation between topics and documents", value=False)
+# if show_correlation:
+# 	if url is not None:
+# 		st.header("Correlation between topics and documents")
+# 		corpus = load_corpus(url)
+# 		st.markdown("Correlation for %d topics: %.2f" % 
+# 			(number_of_topics, tm.cophenet(corpus, number_of_topics)))
 
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
