@@ -184,6 +184,14 @@ if show_topics:
 		download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
 
+show_correlation = st.sidebar.checkbox("Show correlation between topics and documents", value=False)
+if show_correlation:
+	if url is not None:
+		st.header("Correlation between topics and documents")
+		corpus = load_corpus(url)
+		st.markdown("Correlation for %d topics: %.2f" % 
+			number_of_topics, tm.cophenet(corpus, number_of_topics))
+
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
 if show_wordcloud:
@@ -273,7 +281,7 @@ if show_keyword_matches:
 	keywords = st.sidebar.text_input("Keywords")
 	st.header("Keyword Matches")
 	st.markdown('''
-		Show which documents contatin how many of the keywords specified.
+		Show which documents contains how many of the keywords specified.
 	''')
 	if url is not None and keywords != "":
 		corpus = load_corpus(url)

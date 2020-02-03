@@ -7,6 +7,12 @@ from gensim import models
 from gensim.corpora import Dictionary
 
 import pandas as pd
+
+from scipy.cluster.hierarchy import cophenet, dendrogram, linkage
+from scipy.spatial.distance import pdist
+from sklearn import decomposition
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 from io import StringIO
 import re
 
@@ -28,6 +34,17 @@ class TopicModel:
 
 	def fit(self, corpus, number_of_topics):
 		return LDA(models.LdaModel(corpus.bow(), number_of_topics))
+
+	# Based on a code snippet from the chapter "Textsammlung. Ein Beispiel aus der 
+	# Geschichte der Soziologie" in Papilloud (2018), Qualitative Textanalyse mit Topic-Modellen: 
+	# Eine Einführung für Sozialwissenschaftler
+	def cophenet(self, corpus, number_of_topics):
+		tf_matrix = corpus.tf_matrix()
+		nmf = decomposition.NMF(n_components=number_of_topics, random_state=1)
+		doctopic = nmf.fit_transform(tf_matrix)
+		linkage_doc = linkage(doctopic, 'ward')
+		coph_corr = cophenet(linkage_doc, pdist(doctopic))
+		return coph_corr[0]
 
 	# def show_topics(self, number_of_words):
 	# 	return self.lda.show_topics(num_topics=self.number_of_topics, 
@@ -101,3 +118,9 @@ class Corpus:
 
 	def bow(self):
 		return [self.dictionary.doc2bow(doc) for doc in self.tokens]
+
+	def tf_matrix(self):
+		vectorize = TfidfVectorizer(min_df=2, max_df=0.95, encoding='utf-8', 
+			sublinear_tf='True', analyzer='word', ngram_range=(1,1), stop_words = self.stopwords)
+		return vectorize.fit_transform(self.documents['content'])
+
