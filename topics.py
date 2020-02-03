@@ -24,7 +24,7 @@ class TopicModel:
 
 	def load_corpus(self, url):
 		if url is not None:
-			print("*** Reading the corpus")
+			url.seek(0)	# move read head back to the start (StringIO behaves like a file)
 			documents = pd.read_csv(url)
 			corpus = Corpus(documents)
 			corpus.preprocess()

@@ -22,7 +22,6 @@ from io import StringIO
 
 @st.cache(allow_output_mutation=True)
 def load_corpus(url):
-	print("*** Loading the corpus: {}".format(url))
 	return tm.load_corpus(url)
 
 @st.cache(allow_output_mutation=True)
