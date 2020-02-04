@@ -95,6 +95,7 @@ class Corpus:
 		return documents
 
 	def preprocess(self):
+		print("*** preprocess: {}".format(pp))
 		self.tokens = [[word for word in self.preprocess_document(document) 
 				if word not in self.stopwords] 
 			for document in self.documents['content']]
@@ -106,6 +107,7 @@ class Corpus:
 	def read_stopwords(self, file):
 		file = open(file, 'r')
 		self.stopwords = file.read().split('\n')
+		self.stopwords_en = self.stopwords
 
 	def update_stopwords(self, stopwords):
 		print("*** Update stopwords: {}".format(stopwords.split('\n')))
@@ -116,7 +118,7 @@ class Corpus:
 		self.preprocess()
 
 	def preprocess_document(self, document):
-		return pp.strip_punctuation(document).lower().split()
+		return re.sub(r'[^A-Za-z0-9]+', ' ', document).lower().split()
 
 	def bow(self):
 		return [self.dictionary.doc2bow(doc) for doc in self.tokens]

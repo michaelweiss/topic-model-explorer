@@ -149,6 +149,45 @@ def topic_words(k, number_of_words):
 			return r
 	return {}
 
+import re
+
+def keyword_coocurrence_graph(topic):
+	corpus = load_corpus(url)
+	document = corpus.documents['content'][0]
+	print("*** keyword: {}".format(document))
+	index = {}
+	reverse_index = {}
+	next_index = 0
+	sentence_words = []
+	for sentence in document.split(". "):
+		sentence = re.sub(r'[^A-Za-z0-9]+', ' ', sentence)
+		words = [word for word in sentence.lower().split(" ") 
+			if word not in corpus.stopwords_en]
+		words = set(words)
+		for word in words:
+			if word not in index:
+				index[word] = next_index
+				reverse_index[next_index] = word
+				next_index = next_index + 1
+		sentence_words.append(words)
+	edge = np.zeros((len(index), len(index)))
+	for words in sentence_words:
+		for wi, wj in list(itertools.combinations(words, 2)):
+			edge[index[wi], index[wj]] = edge[index[wi], index[wj]] + 1
+	graph = graphviz.Graph()
+	graph.attr('node', shape='plaintext')
+	nodes = []
+	for i in range(len(index)):
+		for j in range(len(index)):
+			if edge[i, j] >= min_edges_keywords:
+				nodes.append(i)
+				nodes.append(j)
+				graph.edge(reverse_index[i], reverse_index[j], 
+					penwidth="{}".format(math.sqrt(edge[i, j])))
+	for i in nodes:
+		graph.node(reverse_index[i])
+	return graph
+
 st.sidebar.title("Topic Model Explorer")
 tm = TopicModel()
 
@@ -256,7 +295,7 @@ show_topic_coocurrence_graph = st.sidebar.checkbox("Show topic co-occurrences", 
 if show_topic_coocurrence_graph:
 	st.header("Topic Co-occurrences")
 	if url is not None:
-		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.3, value=0.1)
+		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.5, value=0.1)
 		min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
 		st.markdown('''
 			We consider topics to co-occur in the same document if the weight of both 
@@ -317,5 +356,17 @@ if show_keyword_matches:
 		st.dataframe(df)
 	else:
 		st.markdown("No corpus or missing keywords.")
+
+show_keyword_coocurrences = st.sidebar.checkbox("Show keyword co-occurrences", value=False)
+
+if show_keyword_coocurrences:
+	st.header("Keyword Co-occurrences")
+	if url is not None:
+		selected_topic_for_keywords = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
+		min_edges_keywords = st.sidebar.slider("Minimum number of edges", 1, 10, value=3)
+		graph = keyword_coocurrence_graph(selected_topic_for_keywords)
+		st.write(graph)
+	else:
+		st.markdown("No corpus.")
 
 
