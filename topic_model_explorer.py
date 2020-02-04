@@ -133,9 +133,11 @@ def document_top_topics(i):
 def tally_columns(dtm):
 	return [sum([row[k] for row in dtm])/len(dtm) for k in range(number_of_topics)]
 
-def sort_by_topic(dtm, k):
+def sort_by_topic(dtm, k, cut_off=0.80):
 	col_k = [row[k] for row in dtm]
-	return np.argsort(-np.array(col_k))
+	top_documents_index = np.argsort(-np.array(col_k))
+	return [index for index in top_documents_index 
+		if dtm[index][k] >= cut_off]
 
 def topic_words(k, number_of_words):
 	r = {}
@@ -151,12 +153,13 @@ def topic_words(k, number_of_words):
 
 import re
 
-def keyword_coocurrence_graph(selected_topic, min_edges):
+def keyword_coocurrence_graph(selected_topic, min_edges, cut_off):
 	corpus = load_corpus(url)
 	dtm = document_topics_matrix()
-	top_5_documents = sort_by_topic(dtm, selected_topic)[0:5]
-	document = "\n".join(corpus.documents['content'][top_5_documents])
-	print("*** keyword: {}".format(document))
+	top_documents = sort_by_topic(dtm, selected_topic, cut_off)
+	print("*** top documents: {}".format(top_documents))
+	document = "\n".join(corpus.documents['content'][top_documents])
+#	print("*** keyword: {}".format(document))
 	index = {}
 	reverse_index = {}
 	next_index = 0
@@ -367,10 +370,12 @@ if show_keyword_coocurrences:
 	st.header("Keyword Co-occurrences")
 	if url is not None:
 		keywords_selected_topic = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
-		keywords_min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=3)
-		graph, nodes = keyword_coocurrence_graph(keywords_selected_topic, keywords_min_edges)
+		keywords_cut_off = st.sidebar.slider("Minium topic weight", 0.0, 1.0, value=0.8)
+		keywords_min_edges = st.sidebar.slider("Minimum number of edges", 1, 15, value=5)
+		graph, nodes = keyword_coocurrence_graph(keywords_selected_topic, 
+			keywords_min_edges, keywords_cut_off)
 		st.graphviz_chart(graph)
-		st.write(nodes)
+#		st.write(nodes)
 	else:
 		st.markdown("No corpus.")
 
