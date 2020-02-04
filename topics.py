@@ -95,8 +95,7 @@ class Corpus:
 		return documents
 
 	def preprocess(self):
-		print("*** preprocess: {}".format(pp))
-		self.tokens = [[word for word in self.preprocess_document(document) 
+		self.tokens = [[word for word in re.sub(r'[^A-Za-z0-9]+', ' ', document).lower().split() 
 				if word not in self.stopwords] 
 			for document in self.documents['content']]
 		self.dictionary = Dictionary(self.tokens)
@@ -116,9 +115,6 @@ class Corpus:
 		self.stopwords = self.stopwords + new_stopwords
 		# update tokens after adding stopwords
 		self.preprocess()
-
-	def preprocess_document(self, document):
-		return re.sub(r'[^A-Za-z0-9]+', ' ', document).lower().split()
 
 	def bow(self):
 		return [self.dictionary.doc2bow(doc) for doc in self.tokens]

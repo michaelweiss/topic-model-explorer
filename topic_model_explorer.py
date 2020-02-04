@@ -154,7 +154,8 @@ import re
 def keyword_coocurrence_graph(selected_topic, min_edges):
 	corpus = load_corpus(url)
 	dtm = document_topics_matrix()
-	document = corpus.documents['content'][sort_by_topic(dtm, selected_topic)[0]]
+	top_5_documents = sort_by_topic(dtm, selected_topic)[0:5]
+	document = "\n".join(corpus.documents['content'][top_5_documents])
 	print("*** keyword: {}".format(document))
 	index = {}
 	reverse_index = {}
@@ -181,13 +182,15 @@ def keyword_coocurrence_graph(selected_topic, min_edges):
 	for i in range(len(index)):
 		for j in range(len(index)):
 			if edge[i, j] >= min_edges:
-				nodes.append(i)
-				nodes.append(j)
+				if i not in nodes:
+					nodes.append(i)
+				if j not in nodes:
+					nodes.append(j)
 				graph.edge(reverse_index[i], reverse_index[j], 
 					penwidth="{}".format(math.sqrt(edge[i, j])))
 	for i in nodes:
 		graph.node(reverse_index[i])
-	return graph
+	return graph, [reverse_index[node] for node in nodes]
 
 st.sidebar.title("Topic Model Explorer")
 tm = TopicModel()
@@ -363,10 +366,11 @@ show_keyword_coocurrences = st.sidebar.checkbox("Show keyword co-occurrences", v
 if show_keyword_coocurrences:
 	st.header("Keyword Co-occurrences")
 	if url is not None:
-		selected_topic_keywords = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
-		min_edges_keywords = st.sidebar.slider("Minimum number of edges", 1, 10, value=3)
-		graph = keyword_coocurrence_graph(selected_topic_keywords, min_edges_keywords)
-		st.write(graph)
+		keywords_selected_topic = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
+		keywords_min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=3)
+		graph, nodes = keyword_coocurrence_graph(keywords_selected_topic, keywords_min_edges)
+		st.graphviz_chart(graph)
+		st.write(nodes)
 	else:
 		st.markdown("No corpus.")
 
