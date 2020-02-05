@@ -181,7 +181,7 @@ def keyword_coocurrence_graph(selected_topic, min_edges, cut_off):
 				edge[index[wi], index[wj]] = edge[index[wi], index[wj]] + 1
 			else:
 				edge[index[wj], index[wi]] = edge[index[wj], index[wi]] + 1
-	graph = graphviz.Graph()
+	graph = graphviz.Graph(format='png')
 	graph.attr('node', shape='plaintext')
 	nodes = []
 	for i in range(len(index)):
@@ -195,7 +195,9 @@ def keyword_coocurrence_graph(selected_topic, min_edges, cut_off):
 					penwidth="{}".format(math.sqrt(edge[i, j])))
 	for i in nodes:
 		graph.node(reverse_index[i])
-	return graph, [reverse_index[node] for node in nodes]
+	# todo: create dataframe with top documents and their name/content
+	# pd.DataFrame(dtm).iloc[top_documents]
+	return graph, [reverse_index[node] for node in nodes], top_documents
 
 st.sidebar.title("Topic Model Explorer")
 tm = TopicModel()
@@ -374,13 +376,15 @@ if show_keyword_coocurrences:
 		keywords_selected_topic = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
 		keywords_cut_off = st.sidebar.slider("Minium topic weight", 0.0, 1.0, value=0.8)
 		keywords_min_edges = st.sidebar.slider("Minimum number of edges", 1, 15, value=5)
-		graph, nodes = keyword_coocurrence_graph(keywords_selected_topic, 
+		graph, nodes, top_docs = keyword_coocurrence_graph(keywords_selected_topic, 
 			keywords_min_edges, keywords_cut_off)
 		if len(nodes) == 0:
 			st.markdown("No graph. Use less restrictive criteria.")
 		else:
 			st.graphviz_chart(graph)
-		st.write(nodes)
+			st.markdown("Top-ranked documents for topic {}:".format(keywords_selected_topic))
+			st.dataframe(pd.DataFrame(corpus.documents).iloc[top_docs])
+#		st.write(nodes)
 	else:
 		st.markdown("No corpus.")
 
