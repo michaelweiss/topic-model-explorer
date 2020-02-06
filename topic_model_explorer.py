@@ -297,7 +297,12 @@ if show_tally_topics:
 			This graph show the proportion of each topic across the corpus.
 		''')
 		dtm = document_topics_matrix()
-		st.line_chart(tally_columns(dtm))
+		tally = pd.DataFrame({
+			"topic": [str(topic) for topic in range(number_of_topics)],
+			"tally": tally_columns(dtm)
+			})
+		# kludge: should not have to use groupby and sum here
+		st.line_chart(tally.groupby("topic").sum())
 	else:
 		st.markdown("No corpus.")
 
