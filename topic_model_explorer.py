@@ -20,6 +20,9 @@ import graphviz as graphviz
 
 from io import StringIO
 
+from os import path, getcwd
+from PIL import Image
+
 @st.cache(allow_output_mutation=True)
 def load_corpus(url):
 	return tm.load_corpus(url)
@@ -256,11 +259,13 @@ if show_wordcloud:
 	st.header("Word cloud")
 	if url is not None:
 		selected_topic = st.sidebar.slider("Topic", 0, number_of_topics - 1, 0)
+		number_of_words = st.sidebar.slider("Number of words", 1, 100, 25)
 		st.markdown('''
-			The word cloud shows the 10 most frequent words for each topic.
-		''')
-		wordcloud = WordCloud(background_color="white", 
-			max_font_size=28).fit_words(topic_words(selected_topic, 10))
+			The word cloud shows the {} most frequent words for each topic.
+		'''.format(number_of_words))
+		mask = np.array(Image.open(path.join(getcwd(), "wordcloud-stencil.png")))
+		wordcloud = WordCloud(background_color="white", mask=mask,
+			max_font_size=32).fit_words(topic_words(selected_topic, number_of_words))
 		plt.imshow(wordcloud, interpolation='bilinear')
 		plt.axis("off")
 		plt.show()
