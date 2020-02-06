@@ -3,7 +3,6 @@
 import streamlit as st
 
 import gensim as gs 
-import gensim.parsing.preprocessing as pp
 
 from gensim import models
 from gensim.corpora import Dictionary
@@ -16,7 +15,7 @@ from sklearn import decomposition
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from io import StringIO
-import re
+from re import sub
 
 class TopicModel:
 	def gensim_version(self):
@@ -90,12 +89,12 @@ class Corpus:
 
 	def to_ascii(self, documents):
 		# replace non-ascii symbols left by text processing software
-		documents['content'] = [re.sub(r'[^A-Za-z0-9,\.?!]+', ' ', document)
+		documents['content'] = [sub(r'[^A-Za-z0-9,\.?!]+', ' ', document)
 			for document in documents['content']]
 		return documents
 
 	def preprocess(self):
-		self.tokens = [[word for word in re.sub(r'[^A-Za-z0-9]+', ' ', document).lower().split() 
+		self.tokens = [[word for word in sub(r'[^A-Za-z0-9]+', ' ', document).lower().split() 
 				if word not in self.stopwords] 
 			for document in self.documents['content']]
 		self.dictionary = Dictionary(self.tokens)

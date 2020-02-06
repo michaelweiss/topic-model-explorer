@@ -311,7 +311,7 @@ if show_topic_coocurrence_graph:
 		st.markdown('''
 			We consider topics to co-occur in the same document if the weight of both 
 			topics for that document are greater than *minimum weight*. The thickness of
-			a line in the co-occurrance graph indicates how often two topics co-occur
+			an edge in the co-occurrance graph indicates how often two topics co-occur
 			in a document (at least *minimum edges* times). Each node corresponds to a 
 			topic. Node size represents the total weight of the topic.
 		''')
@@ -343,9 +343,13 @@ if show_topic_trends:
 		corpus = load_corpus(url)
 		dtm_df = pd.DataFrame(dtm)
 		if "year" in corpus.documents:
-			dtm_df.insert(0, "year", corpus.documents["year"])
+			dtm_df.insert(0, "year", [str(year) for year in corpus.documents["year"]])
 			dtm_df_sum = dtm_df.groupby("year").sum()
 			st.bar_chart(dtm_df_sum)
+			dtm_df_sum_year = dtm_df_sum.copy()
+			dtm_df_sum_year.insert(0, "year", sorted(dtm_df["year"].unique()))
+		download_link(dtm_df_sum_year, "topic-trends-{}.csv".format(number_of_topics),
+			"Download topic trends")
 	else:
 		st.markdown("No corpus.")
 
@@ -354,7 +358,7 @@ if show_keyword_matches:
 	keywords = st.sidebar.text_input("Keywords")
 	st.header("Keyword Matches")
 	st.markdown('''
-		Show which documents contain how many of the keywords specified.
+		Show which documents contain how many of the specified keywords.
 	''')
 	if url is not None and keywords != "":
 		corpus = load_corpus(url)
@@ -372,6 +376,14 @@ show_keyword_coocurrences = st.sidebar.checkbox("Show keyword co-occurrences", v
 
 if show_keyword_coocurrences:
 	st.header("Keyword Co-occurrences")
+	st.markdown('''
+		Summarize the top documents in a given topic as a graph. 
+		Its nodes are keywords in the documents (excluding language-specific, 
+		but not user-defined stopwords), and its edges indicate that two 
+		keywords appear in the same sentence. 
+		The thickness of an edge indicates how often two keywords occur 
+		together (at least *minimum edges* times). 
+	''')
 	if url is not None:
 		keywords_selected_topic = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
 		keywords_cut_off = st.sidebar.slider("Minium topic weight", 0.0, 1.0, value=0.8)
