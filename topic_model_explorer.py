@@ -358,8 +358,8 @@ if show_topic_trends:
 			st.bar_chart(dtm_df_sum)
 			dtm_df_sum_year = dtm_df_sum.copy()
 			dtm_df_sum_year.insert(0, "year", sorted(dtm_df["year"].unique()))
-		download_link(dtm_df_sum_year, "topic-trends-{}.csv".format(number_of_topics),
-			"Download topic trends")
+			download_link(dtm_df_sum_year, "topic-trends-{}.csv".format(number_of_topics),
+				"Download topic trends")
 	else:
 		st.markdown("No corpus.")
 
