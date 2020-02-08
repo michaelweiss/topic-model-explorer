@@ -159,7 +159,6 @@ def keyword_coocurrence_graph(selected_topic, min_edges, cut_off):
 	corpus = load_corpus(url)
 	dtm = document_topics_matrix()
 	top_documents = sort_by_topic(dtm, selected_topic, cut_off)
-	print("*** top documents: {}".format(top_documents))
 	documents = corpus.documents['content'][top_documents]
 	index = {}
 	reverse_index = {}
@@ -198,8 +197,65 @@ def keyword_coocurrence_graph(selected_topic, min_edges, cut_off):
 					penwidth="{}".format(math.sqrt(edge[i, j])))
 	for i in nodes:
 		graph.node(reverse_index[i])
-	# todo: create dataframe with top documents and their name/content
-	# pd.DataFrame(dtm).iloc[top_documents]
+	return graph, [reverse_index[node] for node in nodes], top_documents
+
+# experimental: create keyword co-occurrence graph from top keywords for a list
+# of topics, instead of all non-stopword words in a document
+def topic_keyword_coocurrence_graph(topic_range, min_edges, cut_off, topic_depth):
+	# 1. build list of top documents and keywords for topics in topic_range
+	corpus = load_corpus(url)
+	dtm = document_topics_matrix()
+	top_documents = []
+	top_topic_keywords = []
+	for topic in topic_range:
+		# only include documents about the cut-off
+		top_documents = top_documents + sort_by_topic(dtm, topic, cut_off)
+		# todo: how can we do this in a way that topics with greater weight have more
+		# of their keywords in this list that lower-weight topics?
+		top_topic_keywords = top_topic_keywords + topic_words(topic, topic_depth).keys()
+	documents = corpus.documents['content'][top_documents]
+
+	# 2. extract keywords in top_topic_keywords from sentences in documents
+	index = {}
+	reverse_index = {}
+	next_index = 0
+	sentence_words = []
+	for document in documents:
+		for sentence in document.split(". "):
+			sentence = re.sub(r'[^A-Za-z0-9]+', ' ', sentence)
+			words = [word for word in sentence.lower().split(" ") 
+				if word in top_topic_keywords]
+			words = set(words)
+			for word in words:
+				if word not in index:
+					index[word] = next_index
+					reverse_index[next_index] = word
+					next_index = next_index + 1
+			sentence_words.append(words)
+
+	# 3. create graph from all sentence-level co-occurrences of keywords
+	edge = np.zeros((len(index), len(index)))
+	for words in sentence_words:
+		for wi, wj in list(itertools.combinations(words, 2)):
+			if wi < wj:
+				edge[index[wi], index[wj]] = edge[index[wi], index[wj]] + 1
+			else:
+				edge[index[wj], index[wi]] = edge[index[wj], index[wi]] + 1
+	graph = graphviz.Graph(format='png')
+	graph.attr('node', shape='plaintext')
+	nodes = []
+	for i in range(len(index)):
+		for j in range(len(index)):
+			if edge[i, j] >= min_edges:
+				if i not in nodes:
+					nodes.append(i)
+				if j not in nodes:
+					nodes.append(j)
+				graph.edge(reverse_index[i], reverse_index[j], 
+					penwidth="{}".format(math.sqrt(edge[i, j])))
+	for i in nodes:
+		graph.node(reverse_index[i])
+	# return graph as well as list of nodes and range of documents
 	return graph, [reverse_index[node] for node in nodes], top_documents
 
 st.sidebar.title("Topic Model Explorer")
@@ -410,4 +466,32 @@ if show_keyword_coocurrences:
 	else:
 		st.markdown("No corpus.")
 
+show_topic_keyword_coocurrences = st.sidebar.checkbox("Show topic keyword co-occurrences (experimental)", value=False)
+
+if show_topic_keyword_coocurrences:
+	st.header("Topic Keyword Co-occurrences")
+	st.markdown('''
+		Summarize the top documents in a given topic as a graph. 
+		Its nodes are keywords in the documents (including only the top topic
+		keywords), and its edges indicate that two 
+		keywords appear in the same sentence. 
+		The thickness of an edge indicates how often two keywords occur 
+		together (at least *minimum edges* times). 
+	''')
+	if url is not None:
+		topic_keywords_selected_topic = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
+		topic_keywords_cut_off = st.sidebar.slider("Minium topic weight", 0.0, 1.0, value=0.8)
+		topic_keywords_min_edges = st.sidebar.slider("Minimum number of edges", 1, 15, value=5)
+		topic_keywords_topic_depth = st.sidebar.slider("Number of keywords per topic", 1, 50, value=10)
+		graph, nodes, top_docs = topic_keyword_coocurrence_graph([topic_keywords_selected_topic], 
+			topic_keywords_min_edges, topic_keywords_cut_off, topic_keywords_topic_depth)
+		if len(nodes) == 0:
+			st.markdown("No graph. Use less restrictive criteria.")
+		else:
+			st.graphviz_chart(graph)
+			st.markdown("Top-ranked documents for topic {}:".format(topic_keywords_selected_topic))
+			st.dataframe(pd.DataFrame(corpus.documents).iloc[top_docs])
+#		st.write(nodes)
+	else:
+		st.markdown("No corpus.")
 
