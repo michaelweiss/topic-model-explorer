@@ -461,6 +461,7 @@ if show_keyword_coocurrences:
 		else:
 			st.graphviz_chart(graph)
 			st.markdown("Top-ranked documents for topic {}:".format(keywords_selected_topic))
+			corpus = load_corpus(url)
 			st.dataframe(pd.DataFrame(corpus.documents).iloc[top_docs])
 #		st.write(nodes)
 	else:
@@ -490,6 +491,7 @@ if show_topic_keyword_coocurrences:
 		else:
 			st.graphviz_chart(graph)
 			st.markdown("Top-ranked documents for topic {}:".format(topic_keywords_selected_topic))
+			corpus = load_corpus(url)
 			st.dataframe(pd.DataFrame(corpus.documents).iloc[top_docs])
 #		st.write(nodes)
 	else:
