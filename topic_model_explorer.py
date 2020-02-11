@@ -27,7 +27,7 @@ from PIL import Image
 def load_corpus(url):
 	return tm.load_corpus(url)
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, persist=True)
 def lda_model(url, stopwords, number_of_topics):
 	corpus = load_corpus(url)
 	with st.spinner("Training the topic model ..."):
@@ -43,7 +43,7 @@ def topics_to_csv(number_of_words):
 	for index, topic in lda.show_topics(number_of_topics, number_of_words):
 		line = "topic_{},".format(index)
 		for w in topic:
-			line += " " + corpus.dictionary[int(w[0])]
+			line += " " + w[0]
 		r += line + "\n"
 	return r
 
@@ -141,6 +141,7 @@ def sort_by_topic(dtm, k, cut_off=0.80):
 	return [index for index in top_documents_index 
 		if dtm[index][k] >= cut_off]
 
+# return a dictionary of topic keywords and their probabilities
 def topic_words(k, number_of_words):
 	r = {}
 	corpus = load_corpus(url)
@@ -148,7 +149,7 @@ def topic_words(k, number_of_words):
 	for index, topic in lda.show_topics(number_of_topics, number_of_words):
 		if index == k:
 			for w in topic:
-				s = corpus.dictionary[int(w[0])]
+				s = w[0]
 				r[s] = w[1]
 			return r
 	return {}

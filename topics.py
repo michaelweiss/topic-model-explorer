@@ -5,7 +5,7 @@ import streamlit as st
 import gensim as gs 
 
 from gensim import models
-from gensim.models import ldamulticore
+# from gensim.models import ldamulticore
 from gensim.corpora import Dictionary
 
 import pandas as pd
@@ -35,7 +35,7 @@ class TopicModel:
 			return corpus
 
 	def fit(self, corpus, number_of_topics):
-		return LDA(ldamulticore.LdaModel(corpus.bow(), number_of_topics))
+		return LDA(models.LdaModel(corpus.bow(), number_of_topics, corpus.dictionary))
 
 	# Based on a code snippet from the chapter "Textsammlung. Ein Beispiel aus der 
 	# Geschichte der Soziologie" in Papilloud (2018), Qualitative Textanalyse mit Topic-Modellen: 
