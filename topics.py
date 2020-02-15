@@ -34,8 +34,9 @@ class TopicModel:
 			corpus = Corpus([])	# exception
 			return corpus
 
-	def fit(self, corpus, number_of_topics):
-		return LDA(models.LdaModel(corpus.bow(), number_of_topics, corpus.dictionary))
+	def fit(self, corpus, number_of_topics, number_of_iterations=400, number_of_passes=20):
+		return LDA(models.LdaModel(corpus.bow(), number_of_topics, corpus.dictionary,
+			iterations=number_of_iterations, passes=number_of_passes))
 
 	# Based on a code snippet from the chapter "Textsammlung. Ein Beispiel aus der 
 	# Geschichte der Soziologie" in Papilloud (2018), Qualitative Textanalyse mit Topic-Modellen: 
