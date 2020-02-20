@@ -32,10 +32,13 @@ def lda_model(url, stopwords, number_of_topics):
 	corpus = load_corpus(url)
 	with st.spinner("Training the topic model for {} topics ...".format(number_of_topics)):
 		print("*** Training the topic model: {}".format(number_of_topics))
-		if use_heuristic_alpha_value:
-			return tm.fit(corpus, number_of_topics, alpha="talley")
-		else:
-			return tm.fit(corpus, number_of_topics)
+		return lda_model_no_cache(url, stopwords, number_of_topics)
+
+def lda_model_no_cache(url, stopwords, number_of_topics):
+	if use_heuristic_alpha_value:
+		return tm.fit(corpus, number_of_topics, alpha="talley")
+	else:
+		return tm.fit(corpus, number_of_topics)
 
 # move this method to topics
 def topics_to_csv(number_of_words):
@@ -300,6 +303,7 @@ if show_topics:
 		corpus = load_corpus(url)	# needed for caching purposes (check)
 		df = topics(5)
 		st.table(df)
+		st.markdown("Coherence: %.2f" % (lda_model(url, stopwords, number_of_topics).coherence(corpus)))
 		if use_heuristic_alpha_value:
 			st.markdown("Heuristic value of alpha (Talley et al., 2011): 0.05 (%.2f/%d) = %.2f" % (corpus.average_document_length(),
 				number_of_topics, tm.alpha(corpus, number_of_topics)))
@@ -321,9 +325,9 @@ show_topic_coherence = st.sidebar.checkbox("Show topic coherence", value=False)
 if show_topic_coherence:
 	st.header("Topic Coherence")
 	if url is not None:	
-		number_of_topics_range = st.sidebar.slider("Number of topics (range)", 1, 50, (5, 10))
+		number_of_topics_range = st.sidebar.slider("Number of topics (range)", 1, 50, (5, 15))
 		corpus = load_corpus(url)
-		coherence_values = [lda_model(url, stopwords, num_topics).coherence(corpus)
+		coherence_values = [lda_model_no_cache(url, stopwords, num_topics).coherence(corpus) 
 			for num_topics in range(number_of_topics_range[0], number_of_topics_range[1] + 1)]
 		t = range(number_of_topics_range[0], number_of_topics_range[1] + 1)
 		plt.plot(t, coherence_values)
