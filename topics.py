@@ -9,6 +9,7 @@ from gensim import models
 from gensim.corpora import Dictionary
 
 import pandas as pd
+import numpy as np
 
 from scipy.cluster.hierarchy import cophenet, dendrogram, linkage
 from scipy.spatial.distance import pdist
@@ -34,20 +35,15 @@ class TopicModel:
 			corpus = Corpus([])	# exception
 			return corpus
 
-	def fit(self, corpus, number_of_topics, number_of_iterations=400, number_of_passes=20):
+	def fit(self, corpus, number_of_topics, number_of_iterations=400, number_of_passes=20,
+			alpha="symmetric"):
+		if alpha == "talley":
+			alpha = np.array([self.alpha(corpus, number_of_topics)] * number_of_topics)
 		return LDA(models.LdaModel(corpus.bow(), number_of_topics, corpus.dictionary,
-			iterations=number_of_iterations, passes=number_of_passes))
+			iterations=number_of_iterations, passes=number_of_passes, alpha=alpha))
 
-	# Based on a code snippet from the chapter "Textsammlung. Ein Beispiel aus der 
-	# Geschichte der Soziologie" in Papilloud (2018), Qualitative Textanalyse mit Topic-Modellen: 
-	# Eine Einführung für Sozialwissenschaftler
-	def cophenet(self, corpus, number_of_topics):
-		tf_matrix = corpus.tf_matrix()
-		nmf = decomposition.NMF(n_components=number_of_topics, random_state=1)
-		doctopic = nmf.fit_transform(tf_matrix)
-		linkage_doc = linkage(doctopic, 'ward')
-		coph_corr = cophenet(linkage_doc, pdist(doctopic))
-		return coph_corr[0]
+	def alpha(self, corpus, number_of_topics):
+		return 0.05 * corpus.average_document_length() / number_of_topics
 
 	# def show_topics(self, number_of_words):
 	# 	return self.lda.show_topics(num_topics=self.number_of_topics, 
@@ -83,6 +79,11 @@ class LDA:
 
 	def get_document_topics(self, document_bow):
 		return self.lda.get_document_topics(document_bow)
+
+	def coherence(self, corpus):
+		coherence_model = models.coherencemodels.CoherenceModel(model=self.lda, 
+			texts=corpus.tokens, dictionary=corpus.dictionary, coherence='c_uci')
+		return coherence_model.get_coherence()
 
 class Corpus:
 	def __init__(self, documents):
@@ -124,4 +125,7 @@ class Corpus:
 		vectorize = TfidfVectorizer(min_df=2, max_df=0.95, encoding='utf-8', 
 			sublinear_tf='True', analyzer='word', ngram_range=(1,1), stop_words = self.stopwords)
 		return vectorize.fit_transform(self.documents['content'])
+
+	def average_document_length(self):
+		return np.mean(map(len, self.tokens))
 

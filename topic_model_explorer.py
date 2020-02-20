@@ -32,8 +32,10 @@ def lda_model(url, stopwords, number_of_topics):
 	corpus = load_corpus(url)
 	with st.spinner("Training the topic model ..."):
 		print("*** Training the topic model: {}".format(number_of_topics))
-		lda = tm.fit(corpus, number_of_topics)
-		return lda
+		if use_heuristic_alpha_value:
+			return tm.fit(corpus, number_of_topics, alpha="talley")
+		else:
+			return tm.fit(corpus, number_of_topics)
 
 # move this method to topics
 def topics_to_csv(number_of_words):
@@ -289,6 +291,7 @@ if show_documents:
 		st.markdown("Please upload a corpus.")
 
 number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
+use_heuristic_alpha_value = st.sidebar.checkbox("Use heuristic value for alpha")
 show_topics = st.sidebar.checkbox("Show topics", value=False)
 
 if show_topics:
@@ -297,6 +300,9 @@ if show_topics:
 		corpus = load_corpus(url)	# needed for caching purposes (check)
 		df = topics(5)
 		st.table(df)
+		if use_heuristic_alpha_value:
+			st.markdown("Heuristic value of alpha (Talley et al., 2011): 0.05 ({}/{}) = {}".format(corpus.average_document_length(),
+				number_of_topics, tm.alpha(corpus, number_of_topics)))
 		download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
 	else:
