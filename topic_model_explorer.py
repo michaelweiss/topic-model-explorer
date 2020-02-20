@@ -27,10 +27,10 @@ from PIL import Image
 def load_corpus(url):
 	return tm.load_corpus(url)
 
-@st.cache(allow_output_mutation=True, persist=True)
+@st.cache(allow_output_mutation=True, persist=True, show_spinner=False)
 def lda_model(url, stopwords, number_of_topics):
 	corpus = load_corpus(url)
-	with st.spinner("Training the topic model ..."):
+	with st.spinner("Training the topic model for {} topics ...".format(number_of_topics)):
 		print("*** Training the topic model: {}".format(number_of_topics))
 		if use_heuristic_alpha_value:
 			return tm.fit(corpus, number_of_topics, alpha="talley")
@@ -291,7 +291,7 @@ if show_documents:
 		st.markdown("Please upload a corpus.")
 
 number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
-use_heuristic_alpha_value = st.sidebar.checkbox("Use heuristic value for alpha")
+use_heuristic_alpha_value = st.sidebar.checkbox("Use heuristic value for alpha", value=True)
 show_topics = st.sidebar.checkbox("Show topics", value=False)
 
 if show_topics:
@@ -301,7 +301,7 @@ if show_topics:
 		df = topics(5)
 		st.table(df)
 		if use_heuristic_alpha_value:
-			st.markdown("Heuristic value of alpha (Talley et al., 2011): 0.05 ({}/{}) = {}".format(corpus.average_document_length(),
+			st.markdown("Heuristic value of alpha (Talley et al., 2011): 0.05 (%.2f/%d) = %.2f" % (corpus.average_document_length(),
 				number_of_topics, tm.alpha(corpus, number_of_topics)))
 		download_link(df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
@@ -315,6 +315,24 @@ if show_topics:
 # 		corpus = load_corpus(url)
 # 		st.markdown("Correlation for %d topics: %.2f" % 
 # 			(number_of_topics, tm.cophenet(corpus, number_of_topics)))
+
+show_topic_coherence = st.sidebar.checkbox("Show topic coherence", value=False)
+
+if show_topic_coherence:
+	st.header("Topic Coherence")
+	if url is not None:	
+		number_of_topics_range = st.sidebar.slider("Number of topics (range)", 1, 50, (5, 10))
+		corpus = load_corpus(url)
+		coherence_values = [lda_model(url, stopwords, num_topics).coherence(corpus)
+			for num_topics in range(number_of_topics_range[0], number_of_topics_range[1] + 1)]
+		t = range(number_of_topics_range[0], number_of_topics_range[1] + 1)
+		plt.plot(t, coherence_values)
+		plt.xlabel("Num Topics")
+		plt.ylabel("Coherence Score")
+		plt.show()
+		st.pyplot()
+	else:
+		st.markdown("No corpus")
 
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 
@@ -365,12 +383,12 @@ if show_tally_topics:
 			This graph show the proportion of each topic across the corpus.
 		''')
 		dtm = document_topics_matrix()
-		tally = pd.DataFrame({
-			"topic": [str(topic) for topic in range(number_of_topics)],
-			"tally": tally_columns(dtm)
-			})
-		# kludge: should not have to use groupby and sum here
-		st.line_chart(tally.groupby("topic").sum())
+		topics = range(number_of_topics)
+		plt.plot(topics, tally_columns(dtm))
+		plt.xlabel("Num Topics")
+		plt.ylabel("Tally")
+		plt.show()
+		st.pyplot()
 	else:
 		st.markdown("No corpus.")
 

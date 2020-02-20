@@ -5,6 +5,7 @@ import streamlit as st
 import gensim as gs 
 
 from gensim import models
+from gensim.models.coherencemodel import CoherenceModel
 # from gensim.models import ldamulticore
 from gensim.corpora import Dictionary
 
@@ -35,7 +36,7 @@ class TopicModel:
 			corpus = Corpus([])	# exception
 			return corpus
 
-	def fit(self, corpus, number_of_topics, number_of_iterations=400, number_of_passes=20,
+	def fit(self, corpus, number_of_topics, number_of_iterations=1000, number_of_passes=3,
 			alpha="symmetric"):
 		if alpha == "talley":
 			alpha = np.array([self.alpha(corpus, number_of_topics)] * number_of_topics)
@@ -81,8 +82,8 @@ class LDA:
 		return self.lda.get_document_topics(document_bow)
 
 	def coherence(self, corpus):
-		coherence_model = models.coherencemodels.CoherenceModel(model=self.lda, 
-			texts=corpus.tokens, dictionary=corpus.dictionary, coherence='c_uci')
+		coherence_model = CoherenceModel(model=self.lda, texts=corpus.tokens, 
+			dictionary=corpus.dictionary, coherence='c_uci')
 		return coherence_model.get_coherence()
 
 class Corpus:
