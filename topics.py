@@ -86,6 +86,11 @@ class LDA:
 			dictionary=corpus.dictionary, coherence='c_uci')
 		return coherence_model.get_coherence()
 
+	# return a difference matrix between two topic models
+	def difference(self, other):
+		diff, _ = self.lda.diff(other.lda, distance='jaccard', num_words=10)
+		return diff
+
 class Corpus:
 	def __init__(self, documents):
 		self.documents = self.to_ascii(documents)

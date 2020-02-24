@@ -23,6 +23,8 @@ from io import StringIO
 from os import path, getcwd
 from PIL import Image
 
+from scipy.optimize import linear_sum_assignment
+
 @st.cache(allow_output_mutation=True)
 def load_corpus(url):
 	return tm.load_corpus(url)
@@ -299,11 +301,13 @@ show_topics = st.sidebar.checkbox("Show topics", value=False)
 
 if show_topics:
 	st.header("Topics")
+	number_of_words_in_topic = st.sidebar.slider("Number of words in topic", 1, 20, 5)
 	if url is not None:	
 		corpus = load_corpus(url)	# needed for caching purposes (check)
-		df = topics(5)
+		df = topics(number_of_words_in_topic)
 		st.table(df)
-		st.markdown("Coherence: %.2f" % (lda_model(url, stopwords, number_of_topics).coherence(corpus)))
+		# TODO: cache coherence of a model that has been calculated already
+		st.markdown("Coherence of this model: %.2f" % (lda_model(url, stopwords, number_of_topics).coherence(corpus)))
 		if use_heuristic_alpha_value:
 			st.markdown("Heuristic value of alpha (Talley et al., 2011): 0.05 (%.2f/%d) = %.2f" % (corpus.average_document_length(),
 				number_of_topics, tm.alpha(corpus, number_of_topics)))
@@ -335,6 +339,54 @@ if show_topic_coherence:
 		plt.ylabel("Coherence Score")
 		plt.show()
 		st.pyplot()
+	else:
+		st.markdown("No corpus")
+
+show_topic_alignment = st.sidebar.checkbox("Show topic alignment", value=False)
+
+@st.cache(allow_output_mutation=True, show_spinner=False)
+def lda_model_runs(url, stopwords, number_of_topics, n=4):
+	with st.spinner("Creating {} different topic models".format(n)):
+		lda_models = [lda_model_no_cache(url, stopwords, number_of_topics) for _ in range(n)]
+		return lda_models
+
+def highlight_topic(v):
+	return "background-color: green"
+
+def highlight_topic(x, topic, matches, color="lightgreen"):
+	color = "background-color: %s" % (color)
+	df = pd.DataFrame('', x.index, x.columns)
+	for run in range(len(x.columns)):
+		# print("run: {}".format(run))
+		t = 0
+		for i in range(len(x.index)):
+			# matches[i] is a permutation on the topics
+			# this finds the matching row
+			if matches[run][i] == topic:
+				t = i
+		# print("highlight row: {}".format(t))
+		df[run].loc[t] = color
+	return df
+
+if show_topic_alignment:
+	st.header("Topic Alignment")
+	topic_to_align = st.sidebar.selectbox("Choose topic to align", range(number_of_topics), 0)
+	if url is not None:
+		n = 5	# number of topic models to compare
+		lda_models = lda_model_runs(url, stopwords, number_of_topics, n=n)
+		topic_df = pd.DataFrame([[" ".join([tw[0] for tw in lda.lda.show_topic(t, 10)]) for lda in lda_models]
+			for t in range(number_of_topics)])
+		# diff[0] = difference(lda_models[0], lda_models[1]) etc.
+		diff = [lda_models[0].difference(lda_models[i]) for i in range(1, n)]
+		matches = pd.DataFrame()
+		matches[0] = range(number_of_topics)
+		for i in range(1, n):
+			_, cols = linear_sum_assignment(diff[i-1])
+			matches[i] = cols
+		# st.table(topic_df)
+		st.table(topic_df.style
+			.apply(highlight_topic, topic=topic_to_align, matches=matches, axis=None))
+		st.table(matches)
 	else:
 		st.markdown("No corpus")
 
