@@ -87,8 +87,12 @@ class LDA:
 		return coherence_model.get_coherence()
 
 	# return a difference matrix between two topic models
-	def difference(self, other):
-		diff, _ = self.lda.diff(other.lda, distance='jaccard', num_words=10)
+	# computes the average jaccard distance as defined by Greene (2014)
+	def difference(self, other, n=10):
+		return sum([self.jaccard(other, k) for k in range(n)]) / n
+
+	def jaccard(self, other, k):
+		diff, _ = self.lda.diff(other.lda, distance='jaccard', num_words=k)
 		return diff
 
 class Corpus:

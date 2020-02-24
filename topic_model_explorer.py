@@ -357,22 +357,14 @@ def highlight_topic(x, topic, matches, color="lightgreen"):
 	color = "background-color: %s" % (color)
 	df = pd.DataFrame('', x.index, x.columns)
 	for run in range(len(x.columns)):
-		# print("run: {}".format(run))
-		t = 0
-		for i in range(len(x.index)):
-			# matches[i] is a permutation on the topics
-			# this finds the matching row
-			if matches[run][i] == topic:
-				t = i
-		# print("highlight row: {}".format(t))
-		df[run].loc[t] = color
+		df[run].loc[matches[run][topic]] = color
 	return df
 
 if show_topic_alignment:
 	st.header("Topic Alignment")
 	topic_to_align = st.sidebar.selectbox("Choose topic to align", range(number_of_topics), 0)
 	if url is not None:
-		n = 5	# number of topic models to compare
+		n = 10	# number of topic models to compare
 		lda_models = lda_model_runs(url, stopwords, number_of_topics, n=n)
 		topic_df = pd.DataFrame([[" ".join([tw[0] for tw in lda.lda.show_topic(t, 10)]) for lda in lda_models]
 			for t in range(number_of_topics)])
@@ -386,7 +378,7 @@ if show_topic_alignment:
 		# st.table(topic_df)
 		st.table(topic_df.style
 			.apply(highlight_topic, topic=topic_to_align, matches=matches, axis=None))
-		st.table(matches)
+		# st.table(matches)
 	else:
 		st.markdown("No corpus")
 
