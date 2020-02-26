@@ -38,9 +38,9 @@ def lda_model(url, stopwords, number_of_topics):
 
 def lda_model_no_cache(url, stopwords, number_of_topics):
 	if use_heuristic_alpha_value:
-		return tm.fit(corpus, number_of_topics, alpha="talley")
+		return tm.fit(corpus, number_of_topics, alpha="talley", number_of_chunks=100)
 	else:
-		return tm.fit(corpus, number_of_topics)
+		return tm.fit(corpus, number_of_topics, number_of_chunks=100)
 
 # move this method to topics
 def topics_to_csv(number_of_words):
@@ -350,9 +350,6 @@ def lda_model_runs(url, stopwords, number_of_topics, n=4):
 		lda_models = [lda_model_no_cache(url, stopwords, number_of_topics) for _ in range(n)]
 		return lda_models
 
-def highlight_topic(v):
-	return "background-color: green"
-
 def highlight_topic(x, topic, matches, color="lightgreen"):
 	color = "background-color: %s" % (color)
 	df = pd.DataFrame('', x.index, x.columns)
@@ -360,27 +357,38 @@ def highlight_topic(x, topic, matches, color="lightgreen"):
 		df[run].loc[matches[run][topic]] = color
 	return df
 
+def topic_runs(lda_models, topic, matches):
+	df = pd.DataFrame()
+	for run in range(len(lda_models)):
+		df[run] = [tw[0] for tw 
+			in lda_models[run].lda.show_topic(matches[run][topic], 10)]
+	return df
+
+def topic_alignment(n):
+	lda_models = lda_model_runs(url, stopwords, number_of_topics, n=n)
+	topic_df = pd.DataFrame([[" ".join([tw[0] for tw in lda.lda.show_topic(t, 10)]) for lda in lda_models]
+		for t in range(number_of_topics)])
+	diff = [lda_models[0].difference(lda_models[i]) for i in range(1, n)]
+	matches = pd.DataFrame()
+	matches[0] = range(number_of_topics)
+	for i in range(1, n):
+		_, cols = linear_sum_assignment(diff[i-1])
+		matches[i] = cols
+	return topic_df, matches, lda_models, diff
+
 if show_topic_alignment:
 	st.header("Topic Alignment")
 	topic_to_align = st.sidebar.selectbox("Choose topic to align", range(number_of_topics), 0)
-	if url is not None:
-		n = 10	# number of topic models to compare
-		lda_models = lda_model_runs(url, stopwords, number_of_topics, n=n)
-		topic_df = pd.DataFrame([[" ".join([tw[0] for tw in lda.lda.show_topic(t, 10)]) for lda in lda_models]
-			for t in range(number_of_topics)])
-		# diff[0] = difference(lda_models[0], lda_models[1]) etc.
-		diff = [lda_models[0].difference(lda_models[i]) for i in range(1, n)]
-		matches = pd.DataFrame()
-		matches[0] = range(number_of_topics)
-		for i in range(1, n):
-			_, cols = linear_sum_assignment(diff[i-1])
-			matches[i] = cols
-		# st.table(topic_df)
+	show_topic_alignment_overview = st.sidebar.checkbox("Show topic alignment overview", value=True)
+	if url is None:
+		st.markdown("No corpus")
+	elif show_topic_alignment_overview:
+		topic_df, matches, _, _ = topic_alignment(5)
 		st.table(topic_df.style
 			.apply(highlight_topic, topic=topic_to_align, matches=matches, axis=None))
-		# st.table(matches)
 	else:
-		st.markdown("No corpus")
+		topic_df, matches, lda_models, diff = topic_alignment(5)
+		st.table(topic_runs(lda_models, topic=topic_to_align, matches=matches))
 
 show_wordcloud = st.sidebar.checkbox("Show word cloud", value=False)
 

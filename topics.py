@@ -11,6 +11,7 @@ from gensim.corpora import Dictionary
 
 import pandas as pd
 import numpy as np
+import math
 
 from scipy.cluster.hierarchy import cophenet, dendrogram, linkage
 from scipy.spatial.distance import pdist
@@ -36,15 +37,19 @@ class TopicModel:
 			corpus = Corpus([])	# exception
 			return corpus
 
-	def fit(self, corpus, number_of_topics, number_of_iterations=1000, number_of_passes=3,
-			alpha="symmetric"):
+	def fit(self, corpus, number_of_topics, number_of_iterations=50, number_of_passes=1,
+			number_of_chunks=1, alpha="symmetric"):
 		if alpha == "talley":
 			alpha = np.array([self.alpha(corpus, number_of_topics)] * number_of_topics)
 		return LDA(models.LdaModel(corpus.bow(), number_of_topics, corpus.dictionary,
-			iterations=number_of_iterations, passes=number_of_passes, alpha=alpha))
+			iterations=number_of_iterations, passes=number_of_passes, 
+			chunksize=self.chunksize(corpus, number_of_chunks), alpha=alpha))
 
 	def alpha(self, corpus, number_of_topics):
 		return 0.05 * corpus.average_document_length() / number_of_topics
+
+	def chunksize(self, corpus, number_of_chunks):
+		return math.ceil(len(corpus.documents) / number_of_chunks)
 
 	# def show_topics(self, number_of_words):
 	# 	return self.lda.show_topics(num_topics=self.number_of_topics, 
