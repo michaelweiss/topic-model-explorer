@@ -23,22 +23,15 @@ def lda_model(url, stopwords, number_of_topics):
 
 def lda_model_no_cache(url, stopwords, number_of_topics):
 	if use_heuristic_alpha_value:
-		return tm.fit(corpus, number_of_topics, alpha="talley", number_of_chunks=100)
+		return tm.fit(corpus, number_of_topics, alpha="talley", number_of_chunks=number_of_chunks)
 	else:
-		return tm.fit(corpus, number_of_topics, number_of_chunks=100)
+		return tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
 
 @st.cache(allow_output_mutation=True, show_spinner=False)
 def lda_model_runs(url, stopwords, number_of_topics, n=4):
 	with st.spinner("Creating {} different topic models".format(n)):
 		lda_models = [lda_model_no_cache(url, stopwords, number_of_topics) for _ in range(n)]
 		return lda_models
-
-def highlight_topic(x, topic, matches, color="lightgreen"):
-	color = "background-color: %s" % (color)
-	df = pd.DataFrame('', x.index, x.columns)
-	for run in range(len(x.columns)):
-		df[run].loc[matches[run][topic]] = color
-	return df
 
 def topic_runs(lda_models, topic, matches):
 	df = pd.DataFrame()
@@ -58,6 +51,13 @@ def topic_alignment(n):
 		_, cols = linear_sum_assignment(diff[i-1])
 		matches[i] = cols
 	return topic_df, matches, lda_models, diff
+
+def highlight_topic(x, topic, matches, color="lightgreen"):
+	color = "background-color: %s" % (color)
+	df = pd.DataFrame('', x.index, x.columns)
+	for run in range(len(x.columns)):
+		df[run].loc[matches[run][topic]] = color
+	return df
 
 def download_link(dataframe, file_name, title="Download"):
 	csv = dataframe.to_csv(index=False)
@@ -99,6 +99,7 @@ if show_documents:
 
 number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
 use_heuristic_alpha_value = st.sidebar.checkbox("Use heuristic value for alpha", value=True)
+number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
 
 show_runs = st.sidebar.checkbox("Compare topic model runs", value=False)
 
@@ -114,6 +115,7 @@ if show_runs:
 			.apply(highlight_topic, topic=topic_to_highlight, matches=matches, axis=None))
 	else:
 		topic_df, matches, lda_models, diff = topic_alignment(5)
-		st.table(topic_runs(lda_models, topic=topic_to_highlight, matches=matches))
+		topic_runs_df = topic_runs(lda_models, topic=topic_to_highlight, matches=matches)
+		st.table(topic_runs_df)
 
 
