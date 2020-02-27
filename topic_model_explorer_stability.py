@@ -33,13 +33,6 @@ def lda_model_runs(url, stopwords, number_of_topics, n=4):
 		lda_models = [lda_model_no_cache(url, stopwords, number_of_topics) for _ in range(n)]
 		return lda_models
 
-def topic_runs(lda_models, topic, matches):
-	df = pd.DataFrame()
-	for run in range(len(lda_models)):
-		df[run] = [tw[0] for tw 
-			in lda_models[run].lda.show_topic(matches[run][topic], 10)]
-	return df
-
 def topic_alignment(n):
 	lda_models = lda_model_runs(url, stopwords, number_of_topics, n=n)
 	topic_df = pd.DataFrame([[" ".join([tw[0] for tw in lda.lda.show_topic(t, 10)]) for lda in lda_models]
@@ -57,6 +50,35 @@ def highlight_topic(x, topic, matches, color="lightgreen"):
 	df = pd.DataFrame('', x.index, x.columns)
 	for run in range(len(x.columns)):
 		df[run].loc[matches[run][topic]] = color
+	return df
+
+def topic_runs(lda_models, topic, matches):
+	df = pd.DataFrame()
+	for run in range(len(lda_models)):
+		df[run] = [tw[0] for tw 
+			in lda_models[run].lda.show_topic(matches[run][topic], 10)]
+	return df
+
+def highlight_repeated_keywords(x, color="yellow"):
+	color = "background-color: %s" % (color)
+	df = pd.DataFrame('', x.index, x.columns)
+	# extract array from data frame
+	# we transpose the array so that each row represents one run
+	keywords = x.values.T
+	repeated_keywords = []
+	for keyword in keywords[0]:
+		i = 0
+		for run in range(1, len(x.columns)):
+			if keyword in keywords[run]:
+				i = i + 1
+		# print("keyword {} occurs {} times".format(keyword, i))
+		if i == len(x.columns) - 1:
+			repeated_keywords.append(keyword)
+	print("repeated keywords: {}".format(repeated_keywords))
+	for j in range(len(x.columns)):
+		for i in range(len(x.index)):
+			if keywords[j,i] in repeated_keywords:
+				df[j].loc[i] = color
 	return df
 
 def download_link(dataframe, file_name, title="Download"):
@@ -116,6 +138,7 @@ if show_runs:
 	else:
 		topic_df, matches, lda_models, diff = topic_alignment(5)
 		topic_runs_df = topic_runs(lda_models, topic=topic_to_highlight, matches=matches)
-		st.table(topic_runs_df)
+		st.table(topic_runs_df.style
+			.apply(highlight_repeated_keywords, axis=None))
 
 
