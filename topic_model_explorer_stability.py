@@ -82,39 +82,32 @@ def highlight_repeated_keywords(keywords, weights):
 		# print("keyword {} occurs {} times".format(keyword, i))
 		if i == num_runs - 1:
 			repeated_keywords.append(keyword)
-	print("Repeated keywords: {}".format(repeated_keywords))
+	color = keyword_color(repeated_keywords, num_runs, num_words, keywords, weights)
 	for j in range(num_runs):
 		for i in range(num_words):
 			if keywords[j,i] in repeated_keywords:
-				print("weights: {} / {}".format(weights[j,i], weights[j,num_words-1]))
-				ratio = weights[j,i]/weights[j,num_words-1]
-				if ratio >= 2.0:
-					df[j].loc[i] = "background-color: yellow"
-				else:
-					df[j].loc[i] = "background-color: lightblue"
+				df[j].loc[i] = "background-color: light%s" % (color[keywords[j,i]])
 	return df
 
-def highlight_repeated_keywords_v1(x, color="yellow"):
-	color = "background-color: %s" % (color)
-	df = pd.DataFrame('', x.index, x.columns)
-	# extract array from data frame
-	# we transpose the array so that each row represents one run
-	keywords = x.values.T
-	repeated_keywords = []
-	for keyword in keywords[0]:
-		i = 0
-		for run in range(1, len(x.columns)):
-			if keyword in keywords[run]:
-				i = i + 1
-		# print("keyword {} occurs {} times".format(keyword, i))
-		if i == len(x.columns) - 1:
-			repeated_keywords.append(keyword)
-	print("repeated keywords: {}".format(repeated_keywords))
-	for j in range(len(x.columns)):
-		for i in range(len(x.index)):
+def keyword_color(repeated_keywords, num_runs, num_words, keywords, weights):
+	color = {}
+	for keyword in repeated_keywords:
+		color[keyword] = None
+	for j in range(num_runs):
+		for i in range(num_words):
 			if keywords[j,i] in repeated_keywords:
-				df[j].loc[i] = color
-	return df
+				ratio = weights[j,i]/weights[j,num_words-1]
+				if ratio >= 2.0:
+					if color[keywords[j,i]] is None:
+						color[keywords[j,i]] = 'yellow'
+					elif color[keywords[j,i]] == 'blue':
+						color[keywords[j,i]] = 'green'
+				else:
+					if color[keywords[j,i]] is None:
+						color[keywords[j,i]] = 'blue'
+					elif color[keywords[j,i]] == 'yellow':
+						color[keywords[j,i]] = 'green'
+	return color
 
 def download_link(dataframe, file_name, title="Download"):
 	csv = dataframe.to_csv(index=False)
@@ -167,13 +160,13 @@ if show_runs:
 	if url is None:
 		st.markdown("No corpus")
 	elif show_runs_all_topics:
-		topics, matches, lda_models, diff = topic_alignment(5)
+		topics, matches, lda_models, diff = topic_alignment(4)
 		st.table(topics.style
 			.apply(highlight_topic, topic=topic_to_highlight, matches=matches, axis=None))
 	else:
 		# todo: topic_alignment to return weights as well
 		# then pass weights as argument to highlight_repeated_keywords
-		topics, matches, lda_models, diff = topic_alignment(5)
+		topics, matches, lda_models, diff = topic_alignment(4)
 		keywords, weights = topic_runs(lda_models, topic=topic_to_highlight, matches=matches)
 		st.table(keywords.style
 			.apply(highlight_repeated_keywords, weights=weights, axis=None))
