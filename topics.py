@@ -75,6 +75,17 @@ class TopicModel:
 	# def topics(self, number_of_words):
 	# 	return self.read_topics(self.topics_to_csv(number_of_words))
 
+# TODO: move logic for running multiple topic models from topic-model-explorer
+class TopicModelRuns:
+	def __init__(self, topic_model, url, stopwords, number_of_chunks, number_of_topics, n=5):
+		self.topic_model = topic_model
+		self.url = url
+		self.stopwords = stopwords
+		self.number_of_chunks = number_of_chunks
+		self.number_of_topics = number_of_topics
+		self.n = n
+		# run_topic_models()
+
 class LDA:
 	def __init__(self, lda):
 		self.lda = lda

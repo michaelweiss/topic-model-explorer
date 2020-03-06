@@ -14,21 +14,23 @@ import base64
 def load_corpus(url):
 	return tm.load_corpus(url)
 
+# check the cache if there is already a model for this url, stopwords and number_of_topics
 @st.cache(allow_output_mutation=True, persist=True, show_spinner=False)
 def lda_model(url, stopwords, number_of_topics):
-	corpus = load_corpus(url)
 	with st.spinner("Training the topic model for {} topics ...".format(number_of_topics)):
 		print("*** Training the topic model: {}".format(number_of_topics))
 		return lda_model_no_cache(url, stopwords, number_of_topics)
 
 def lda_model_no_cache(url, stopwords, number_of_topics):
+	corpus = load_corpus(url)
 	if use_heuristic_alpha_value:
 		return tm.fit(corpus, number_of_topics, alpha="talley", number_of_chunks=number_of_chunks)
 	else:
 		return tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
 
+# check the cache if there are already runs for this url, stopwords and number_of_topics
 @st.cache(allow_output_mutation=True, persist=True, show_spinner=False)
-def lda_model_runs(url, stopwords, number_of_topics, n=4):
+def lda_model_runs(url, stopwords, number_of_topics, n=5):
 	with st.spinner("Creating {} different topic models".format(n)):
 		lda_models = [lda_model_no_cache(url, stopwords, number_of_topics) for _ in range(n)]
 		return lda_models
@@ -62,7 +64,7 @@ def topic_runs(lda_models, topic, matches):
 			in lda_models[run].lda.show_topic(matches[run][topic], 10)]
 	return keywords, weights
 
-# todo: once we pass weights, use the relative weights to assign colors
+# done: once we pass weights, use the relative weights to assign colors
 # relative weight = weight / lowest weight in top 10
 # for all keywords that are repeated across topics, color them blue if all >= 2, 
 # green if some >= 2, and blue if all < 2
@@ -149,7 +151,7 @@ if show_documents:
 		st.markdown("Please upload a corpus.")
 
 number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
-use_heuristic_alpha_value = st.sidebar.checkbox("Use heuristic value for alpha", value=True)
+use_heuristic_alpha_value = st.sidebar.checkbox("Use heuristic value for alpha", value=False)
 number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
 
 show_runs = st.sidebar.checkbox("Compare topic model runs", value=False)
