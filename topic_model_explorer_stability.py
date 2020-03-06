@@ -27,7 +27,7 @@ def lda_model_no_cache(url, stopwords, number_of_topics):
 	else:
 		return tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
 
-@st.cache(allow_output_mutation=True, show_spinner=False)
+@st.cache(allow_output_mutation=True, persist=True, show_spinner=False)
 def lda_model_runs(url, stopwords, number_of_topics, n=4):
 	with st.spinner("Creating {} different topic models".format(n)):
 		lda_models = [lda_model_no_cache(url, stopwords, number_of_topics) for _ in range(n)]
@@ -109,13 +109,14 @@ def keyword_color(repeated_keywords, num_runs, num_words, keywords, weights):
 						color[keywords[j,i]] = 'green'
 	return color
 
-def download_link(dataframe, file_name, title="Download"):
-	csv = dataframe.to_csv(index=False)
-	download_link_from_csv(csv, file_name, title)
-
 def download_link_from_csv(csv, file_name, title="Download"):
 	b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
 	href = "<a href='data:file/csv;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
+	st.markdown(href, unsafe_allow_html=True)
+
+def download_link_from_html(html, file_name, title="Download"):
+	b64 = base64.b64encode(html.encode()).decode()  # some strings <-> bytes conversions necessary here
+	href = "<a href='data:file/html;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
 	st.markdown(href, unsafe_allow_html=True)
 
 st.sidebar.title("Topic Model Explorer")
@@ -160,16 +161,31 @@ if show_runs:
 	if url is None:
 		st.markdown("No corpus")
 	elif show_runs_all_topics:
-		topics, matches, lda_models, diff = topic_alignment(4)
+		topics, matches, lda_models, diff = topic_alignment(5)
 		st.table(topics.style
 			.apply(highlight_topic, topic=topic_to_highlight, matches=matches, axis=None))
+		download_link_from_csv(topics.to_csv(index=False),
+			"tm-{}-runs.csv".format(number_of_topics),
+			title="Download topics as CSV")
 	else:
 		# todo: topic_alignment to return weights as well
 		# then pass weights as argument to highlight_repeated_keywords
-		topics, matches, lda_models, diff = topic_alignment(4)
+		topics, matches, lda_models, diff = topic_alignment(5)
 		keywords, weights = topic_runs(lda_models, topic=topic_to_highlight, matches=matches)
 		st.table(keywords.style
 			.apply(highlight_repeated_keywords, weights=weights, axis=None))
+		download_link_from_csv(keywords.to_csv(index=False),
+			"tm-{}-{}-keywords.csv".format(number_of_topics, topic_to_highlight),
+			title="Download keywords as CSV")
+		download_link_from_html(keywords.style
+			.apply(highlight_repeated_keywords, weights=weights, axis=None)
+			.render(), 
+			"tm-{}-{}-keywords.html".format(number_of_topics, topic_to_highlight),
+			title="Download keywords as HTML (with colors)")
 		st.table(weights)
+		download_link_from_csv(keywords.to_csv(index=False),
+			"tm-{}-{}-weights.csv".format(number_of_topics, topic_to_highlight),
+			title="Download weights as CSV")
+
 
 
