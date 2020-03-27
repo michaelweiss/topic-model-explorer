@@ -17,12 +17,13 @@ def load_corpus(url):
 # check the cache if there is already a model for this url, stopwords and number_of_topics
 @st.cache(allow_output_mutation=True, persist=True, show_spinner=False)
 def lda_model(url, stopwords, number_of_topics):
+	corpus = load_corpus(url)
+	corpus.update_stopwords(stopwords)
 	with st.spinner("Training the topic model for {} topics ...".format(number_of_topics)):
 		print("*** Training the topic model: {}".format(number_of_topics))
-		return lda_model_no_cache(url, stopwords, number_of_topics)
+		return lda_model_no_cache(corpus, number_of_topics)
 
-def lda_model_no_cache(url, stopwords, number_of_topics):
-	corpus = load_corpus(url)
+def lda_model_no_cache(corpus, number_of_topics):
 	if use_heuristic_alpha_value:
 		return tm.fit(corpus, number_of_topics, alpha="talley", number_of_chunks=number_of_chunks)
 	else:
@@ -30,9 +31,11 @@ def lda_model_no_cache(url, stopwords, number_of_topics):
 
 # check the cache if there are already runs for this url, stopwords and number_of_topics
 @st.cache(allow_output_mutation=True, persist=True, show_spinner=False)
-def lda_model_runs(url, stopwords, number_of_topics, n=5):
+def lda_model_runs(url, stopwords, number_of_topics, n=4):
+	corpus = load_corpus(url)
+	corpus.update_stopwords(stopwords)
 	with st.spinner("Creating {} different topic models".format(n)):
-		lda_models = [lda_model_no_cache(url, stopwords, number_of_topics) for _ in range(n)]
+		lda_models = [lda_model_no_cache(corpus, number_of_topics) for run in range(n)]
 		return lda_models
 
 def topic_alignment(n):
@@ -57,12 +60,15 @@ def highlight_topic(x, topic, matches, color="lightgreen"):
 def topic_runs(lda_models, topic, matches):
 	keywords = pd.DataFrame()
 	weights = pd.DataFrame()
+	documents = pd.DataFrame()
 	for run in range(len(lda_models)):
 		keywords[run] = [tw[0] for tw
 			in lda_models[run].lda.show_topic(matches[run][topic], 10)]
 		weights[run] = [tw[1] for tw
 			in lda_models[run].lda.show_topic(matches[run][topic], 10)]
-	return keywords, weights
+		# todo: while correct, this is inefficient as the DTM is recomputed for each run
+		documents[run] = document_topics_matrix(lda_models[run])[matches[run][topic]]
+	return lda_models, keywords, weights, documents
 
 # done: once we pass weights, use the relative weights to assign colors
 # relative weight = weight / lowest weight in top 10
@@ -110,6 +116,18 @@ def keyword_color(repeated_keywords, num_runs, num_words, keywords, weights):
 					elif color[keywords[j,i]] == 'yellow':
 						color[keywords[j,i]] = 'green'
 	return color
+
+def document_topics_matrix(lda):
+	dtm = []
+	for document_bow in corpus.bow():
+		dtm.append(topics_sparse_to_full(lda.get_document_topics(document_bow)))
+	return pd.DataFrame(dtm)
+
+def topics_sparse_to_full(topics):
+	topics_full = [0] * number_of_topics  # pythonic way of creating a list of zeros
+	for topic, score in topics:
+		topics_full[topic] = score
+	return topics_full
 
 def download_link_from_csv(csv, file_name, title="Download"):
 	b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
@@ -163,7 +181,7 @@ if show_runs:
 	if url is None:
 		st.markdown("No corpus")
 	elif show_runs_all_topics:
-		topics, matches, lda_models, diff = topic_alignment(5)
+		topics, matches, lda_models, diff = topic_alignment(4)
 		st.table(topics.style
 			.apply(highlight_topic, topic=topic_to_highlight, matches=matches, axis=None))
 		download_link_from_csv(topics.to_csv(index=False),
@@ -172,8 +190,8 @@ if show_runs:
 	else:
 		# todo: topic_alignment to return weights as well
 		# then pass weights as argument to highlight_repeated_keywords
-		topics, matches, lda_models, diff = topic_alignment(5)
-		keywords, weights = topic_runs(lda_models, topic=topic_to_highlight, matches=matches)
+		topics, matches, lda_models, diff = topic_alignment(4)
+		lda_models, keywords, weights, documents = topic_runs(lda_models, topic=topic_to_highlight, matches=matches)
 		st.table(keywords.style
 			.apply(highlight_repeated_keywords, weights=weights, axis=None))
 		download_link_from_csv(keywords.to_csv(index=False),
@@ -188,6 +206,7 @@ if show_runs:
 		download_link_from_csv(keywords.to_csv(index=False),
 			"tm-{}-{}-weights.csv".format(number_of_topics, topic_to_highlight),
 			title="Download weights as CSV")
+		st.dataframe(documents)
 
 
 
