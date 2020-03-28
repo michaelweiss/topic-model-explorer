@@ -13,11 +13,6 @@ import pandas as pd
 import numpy as np
 import math
 
-from scipy.cluster.hierarchy import cophenet, dendrogram, linkage
-from scipy.spatial.distance import pdist
-from sklearn import decomposition
-from sklearn.feature_extraction.text import TfidfVectorizer
-
 from io import StringIO
 from re import sub
 
@@ -34,7 +29,10 @@ class TopicModel:
 			return corpus
 		else:
 			print("*** No url provided")
-			corpus = Corpus([])	# exception
+			corpus = Corpus(pd.DataFrame({
+				'name': [],
+				'content': []
+			}))	 # exception
 			return corpus
 
 	def fit(self, corpus, number_of_topics, number_of_iterations=50, number_of_passes=1,
@@ -146,11 +144,6 @@ class Corpus:
 
 	def bow(self):
 		return [self.dictionary.doc2bow(doc) for doc in self.tokens]
-
-	def tf_matrix(self):
-		vectorize = TfidfVectorizer(min_df=2, max_df=0.95, encoding='utf-8', 
-			sublinear_tf='True', analyzer='word', ngram_range=(1,1), stop_words = self.stopwords)
-		return vectorize.fit_transform(self.documents['content'])
 
 	def average_document_length(self):
 		return np.mean(map(len, self.tokens))

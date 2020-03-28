@@ -5,7 +5,9 @@ from topics import TopicModel
 
 # model
 
+@st.cache(suppress_st_warning=True)
 def load_corpus(url):
+	st.markdown("Cache miss: load_corpus")
 	return tm.load_corpus(url)
 
 # model helpers
@@ -22,6 +24,11 @@ def show_documents(url):
 	else:
 		st.markdown("Please upload a corpus.")
 
+def show_stopwords(stopwords):
+	st.header("Stopwords")
+	if stopwords is not None:
+		st.dataframe(stopwords.split('\n'))
+
 # view helpers
 
 def check_for_name_content_columns(documents):
@@ -35,9 +42,13 @@ def check_for_name_content_columns(documents):
 def app(tm):
 	st.sidebar.title("Topic Model Explorer")
 	url = st.sidebar.file_uploader("Corpus", type="csv")
-	show_documents = st.sidebar.checkbox("Show documents", value=True)
-	if show_documents:
+	corpus = load_corpus(url)
+	if st.sidebar.checkbox("Show documents"):
 		show_documents(url)
+	stopwords = st.sidebar.text_area("Stopwords (one per line)")
+	if st.sidebar.button("Update stopwords"):
+		corpus.update_stopwords(stopwords)
+		show_stopwords(stopwords)
 
 # application
 
