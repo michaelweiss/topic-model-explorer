@@ -38,8 +38,14 @@ def show_documents(corpus):
 
 def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs, show_all=True):
 	st.header("Topic model runs")
-	lda_models = lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
-	st.write(lda_models)
+	if corpus is None:
+		st.markdown("Please upload a corpus first")
+	else:
+		lda_models = lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
+		if st.sidebar.checkbox("Show all topics", value=False):
+			st.write(lda_models)
+		else:
+			st.markdown("Show one topic only")
 
 # view helpers
 
@@ -64,8 +70,7 @@ def app(tm):
 	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
 	number_of_runs = st.sidebar.slider("Number of runs", 1, 10, 4)
 	if st.sidebar.checkbox("Show topic model runs", value=False):
-		show_topic_model_runs(corpus, number_of_topics, number_of_chunks,
-			number_of_runs, show_all=True)
+		show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
 
 # application
 
