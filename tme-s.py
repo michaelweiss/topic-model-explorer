@@ -1,6 +1,8 @@
 import streamlit as st
 import numpy as np 
 import pandas as pd 
+from scipy.optimize import linear_sum_assignment
+
 from topics import TopicModel
 
 # model
@@ -26,6 +28,25 @@ def lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs):
 
 # model helpers
 
+def topic_alignment(lda_models, number_of_topics):
+	# extract the topic words for each topic in all topic models
+	topics = pd.DataFrame([[" ".join([tw[0] for tw in lda.lda.show_topic(t, 10)]) 
+		for lda in lda_models] for t in range(number_of_topics)])
+	# compute the average Jaccard distance between the topic models
+	diffs = [lda_models[0].difference(lda_models[i]) 
+		for i in range(1, len(lda_models))]
+	matches = pd.DataFrame()
+	# first column are the topics of the first topic model
+	matches[0] = range(number_of_topics)
+	# try to fit topics between the first and each of the remaining topic models
+	# the Hungarian assignment method uses the degree of match between topics (diffs)
+	# and minimizes the total misalignment between topics
+	for i in range(1, len(lda_models)):
+		_, cols = linear_sum_assignment(diffs[i-1])
+		# each column contains the topics that match the topics of the first topic
+		matches[i] = cols
+	return topics, matches, diffs
+
 # view
 
 def show_documents(corpus):
@@ -41,9 +62,12 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
+		selected_topic = st.sidebar.selectbox("Highlight topic", range(number_of_topics), 0)
 		lda_models = lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
+		topics, matches, diffs = topic_alignment(lda_models, number_of_topics)
 		if st.sidebar.checkbox("Show all topics", value=False):
-			st.write(lda_models)
+			st.table(topics.style
+				.apply(highlight_topic, topic=selected_topic, matches=matches, axis=None))
 		else:
 			st.markdown("Show one topic only")
 
@@ -54,6 +78,13 @@ def check_for_name_content_columns(documents):
 		st.markdown('''
 		The corpus must have a *name* and a *content* column.
 		''')
+
+def highlight_topic(x, topic, matches, color="lightgreen"):
+	color = "background-color: %s" % (color)
+	df = pd.DataFrame('', x.index, x.columns)
+	for run in range(len(x.columns)):
+		df[run].loc[matches[run][topic]] = color
+	return df
 
 # controller
 
