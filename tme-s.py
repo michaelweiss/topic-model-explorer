@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np 
 import pandas as pd 
 from scipy.optimize import linear_sum_assignment
+import time
 
 from topics import TopicModel
 
@@ -16,14 +17,17 @@ def update_stopwords(corpus, stopwords):
 	if corpus is not None:
 		corpus.update_stopwords(stopwords)
 
-@st.cache(allow_output_mutation=True, suppress_st_warning=True)
+@st.cache(suppress_st_warning=True)
 def lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs):
-	st.markdown("Fitting topic models:")
+	status = st.markdown("Fitting topic models:")
 	progress_bar = st.progress(0)
 	lda_models = []
 	for run in range(number_of_runs):
 		lda_models.append(tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks))
-		progress_bar.progress(int(100 * (run + 1)/number_of_runs)) 
+		# lda_models.append([run, number_of_topics, number_of_chunks])
+		# time.sleep(1)
+		progress_bar.progress(int(100 * (run + 1)/number_of_runs))
+	hide_status_indicators(status, progress_bar)
 	return lda_models
 
 # model helpers
@@ -64,12 +68,13 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 	else:
 		selected_topic = st.sidebar.selectbox("Highlight topic", range(number_of_topics), 0)
 		lda_models = lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
-		topics, matches, diffs = topic_alignment(lda_models, number_of_topics)
+		# topics, matches, diffs = topic_alignment(lda_models, number_of_topics)
 		if st.sidebar.checkbox("Show all topics", value=False):
-			st.table(topics.style
-				.apply(highlight_topic, topic=selected_topic, matches=matches, axis=None))
+			st.write(lda_models)
+		# 	st.table(topics.style
+		# 		.apply(highlight_topic, topic=selected_topic, matches=matches, axis=None))
 		else:
-			st.markdown("Show one topic only")
+		 	st.markdown("Show one topic only")
 
 # view helpers
 
@@ -85,6 +90,11 @@ def highlight_topic(x, topic, matches, color="lightgreen"):
 	for run in range(len(x.columns)):
 		df[run].loc[matches[run][topic]] = color
 	return df
+
+def hide_status_indicators(*indicators):
+	time.sleep(1)
+	for indicator in indicators:
+		indicator.empty()
 
 # controller
 
