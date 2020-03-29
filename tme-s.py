@@ -5,29 +5,41 @@ from topics import TopicModel
 
 # model
 
-@st.cache(suppress_st_warning=True)
+@st.cache(allow_output_mutation=True, suppress_st_warning=True)
 def load_corpus(url):
 	st.markdown("Cache miss: load_corpus")
 	return tm.load_corpus(url)
 
+def update_stopwords(corpus, stopwords):
+	if corpus is not None:
+		corpus.update_stopwords(stopwords)
+
+@st.cache(allow_output_mutation=True, suppress_st_warning=True)
+def lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs):
+	st.markdown("Fitting topic models:")
+	progress_bar = st.progress(0)
+	lda_models = []
+	for run in range(number_of_runs):
+		lda_models.append(tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks))
+		progress_bar.progress(int(100 * (run + 1)/number_of_runs)) 
+	return lda_models
+
 # model helpers
-# todo: move these into its own module
 
 # view
 
-def show_documents(url):
+def show_documents(corpus):
 	st.header("Corpus")
-	if url is not None:
-		corpus = load_corpus(url)
+	if corpus is not None:
 		check_for_name_content_columns(corpus.documents)
 		st.dataframe(corpus.documents)
 	else:
 		st.markdown("Please upload a corpus.")
 
-def show_stopwords(stopwords):
-	st.header("Stopwords")
-	if stopwords is not None:
-		st.dataframe(stopwords.split('\n'))
+def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs, show_all=True):
+	st.header("Topic model runs")
+	lda_models = lda_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
+	st.write(lda_models)
 
 # view helpers
 
@@ -44,11 +56,16 @@ def app(tm):
 	url = st.sidebar.file_uploader("Corpus", type="csv")
 	corpus = load_corpus(url)
 	if st.sidebar.checkbox("Show documents"):
-		show_documents(url)
+		show_documents(corpus)
 	stopwords = st.sidebar.text_area("Stopwords (one per line)")
 	if st.sidebar.button("Update stopwords"):
-		corpus.update_stopwords(stopwords)
-		show_stopwords(stopwords)
+		update_stopwords(corpus, stopwords)
+	number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
+	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
+	number_of_runs = st.sidebar.slider("Number of runs", 1, 10, 4)
+	if st.sidebar.checkbox("Show topic model runs", value=False):
+		show_topic_model_runs(corpus, number_of_topics, number_of_chunks,
+			number_of_runs, show_all=True)
 
 # application
 

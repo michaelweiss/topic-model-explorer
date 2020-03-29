@@ -22,18 +22,13 @@ class TopicModel:
 
 	def load_corpus(self, url):
 		if url is not None:
-			url.seek(0)	# move read head back to the start (StringIO behaves like a file)
+			url.seek(0)	 # move read head back to the start (StringIO behaves like a file)
 			documents = pd.read_csv(url)
 			corpus = Corpus(documents)
 			corpus.preprocess()
 			return corpus
 		else:
-			print("*** No url provided")
-			corpus = Corpus(pd.DataFrame({
-				'name': [],
-				'content': []
-			}))	 # exception
-			return corpus
+			return None
 
 	def fit(self, corpus, number_of_topics, number_of_iterations=50, number_of_passes=1,
 			number_of_chunks=1, alpha="symmetric"):
@@ -131,8 +126,8 @@ class Corpus:
 
 	def read_stopwords(self, file):
 		file = open(file, 'r')
-		self.stopwords = file.read().split('\n')
-		self.stopwords_en = self.stopwords
+		self.stopwords_en = file.read().split('\n')
+		self.stopwords = self.stopwords_en
 
 	def update_stopwords(self, stopwords):
 		print("*** Update stopwords: {}".format(stopwords.split('\n')))
