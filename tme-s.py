@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd 
 from scipy.optimize import linear_sum_assignment
 import time
+import base64
 
 from topics import TopicModel
 from topics import TopicAlignment
@@ -34,6 +35,8 @@ def show_documents(corpus):
 	if corpus is not None:
 		check_for_name_content_columns(corpus.documents)
 		st.dataframe(corpus.documents)
+		download_link_from_csv("\n".join(corpus.stopwords), "stopwords.txt",
+			"Download stopwords")
 	else:
 		st.markdown("Please upload a corpus.")
 
@@ -56,6 +59,9 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			"""
 			st.table(alignment.topics.style
 				.apply(highlight_topic, topic=selected_topic, matches=alignment.matches, axis=None))
+			download_link_from_csv(alignment.topics.to_csv(index=False), 
+				"tm-{}-runs.csv".format(number_of_topics), 
+				"Download topic model runs")
 		else:
 			"""
 			This table shows the alignment across runs for a single topic.
@@ -72,6 +78,14 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			st.table(alignment.keywords[selected_topic].style
 				.apply(highlight_repeated_keywords, weights=alignment.weights[selected_topic], 
 					min_runs=int(number_of_runs * 0.75), axis=None))
+			download_link_from_csv(alignment.keywords[selected_topic].to_csv(index=False), 
+				"tm-{}-{}-keywords.csv".format(number_of_topics, selected_topic), 
+				"Download keywords")
+			download_link_from_html(alignment.keywords[selected_topic].style
+				.apply(highlight_repeated_keywords, weights=alignment.weights[selected_topic], 
+					min_runs=int(number_of_runs * 0.75), axis=None).render(), 
+				"tm-{}-{}-keywords.html".format(number_of_topics, selected_topic),
+				title="Download keywords (with colors)")
 
 # view helpers
 
@@ -139,6 +153,16 @@ def keyword_color(repeated_keywords, num_runs, num_words, keywords, weights):
 					elif color[keywords[i,j]] == 'yellow':
 						color[keywords[i,j]] = 'green'
 	return color
+
+def download_link_from_csv(csv, file_name, title="Download"):
+	b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+	href = "<a href='data:file/csv;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
+	st.markdown(href, unsafe_allow_html=True)
+
+def download_link_from_html(html, file_name, title="Download"):
+	b64 = base64.b64encode(html.encode()).decode()  # some strings <-> bytes conversions necessary here
+	href = "<a href='data:file/html;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
+	st.markdown(href, unsafe_allow_html=True)
 
 # controller
 
