@@ -46,6 +46,8 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 		alignment = find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs)
 		if st.sidebar.checkbox("Show all topics", value=False):
 			"""
+			This table gives an overview of the topics in each run.
+
 			Highlighting shows which topics correspond across the different runs.
 			The alignment is calculated based on minimizing the sum of the differences between topics.
 			"""
@@ -53,8 +55,16 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 				.apply(highlight_topic, topic=selected_topic, matches=alignment.matches, axis=None))
 		else:
 			"""
-			Show a single topic only.
+			This table shows the alignment across runs for a single topic.
+
+			Colors are assigned based on relative keyword weight (ratio of keyword weight 
+			and the lowest keyword weight for the top-10 keywords) for a given run. Keywords 
+			are colored *yellow* if the ratio is >= 2 across all runs, *green* if it is >= 2 for 
+			some of the runs, and *blue* if it is < 2 for all runs.
 			"""
+			st.table(alignment.keywords[selected_topic].style
+				.apply(highlight_repeated_keywords, weights=alignment.weights[selected_topic], axis=None))
+			st.table(alignment.weights[selected_topic])
 
 # view helpers
 
@@ -64,6 +74,11 @@ def check_for_name_content_columns(documents):
 		The corpus must have a *name* and a *content* column.
 		''')
 
+def hide_status_indicators(*indicators):
+	time.sleep(1)
+	for indicator in indicators:
+		indicator.empty()
+
 def highlight_topic(x, topic, matches, color="lightgreen"):
 	color = "background-color: %s" % (color)
 	df = pd.DataFrame('', x.index, x.columns)
@@ -71,10 +86,52 @@ def highlight_topic(x, topic, matches, color="lightgreen"):
 		df[run].loc[matches[run][topic]] = color
 	return df
 
-def hide_status_indicators(*indicators):
-	time.sleep(1)
-	for indicator in indicators:
-		indicator.empty()
+def highlight_repeated_keywords(keywords, weights):
+	df = pd.DataFrame('', keywords.index, keywords.columns)
+	num_runs, num_words = len(keywords.columns), len(keywords.index)
+	# extract array from data frame
+	# we transpose the array so that each row represents one run
+	keywords = keywords.values.T
+	weights = weights.values.T
+	repeated_keywords = []
+	for keyword in keywords[0]:
+		# todo: change index, i is used to represent the run elsewhere
+		i = 0
+		for run in range(1, num_runs):
+			if keyword in keywords[run]:
+				i = i + 1
+		# add keyword to repeated_keywords if it occurs in each run
+		# can modify this to some percentage of the runs		
+		if i == num_runs - 1:
+			repeated_keywords.append(keyword)
+	color = keyword_color(repeated_keywords, num_runs, num_words, keywords, weights)
+	for j in range(num_runs):
+		for i in range(num_words):
+			if keywords[j,i] in repeated_keywords:
+				df[j].loc[i] = "background-color: light%s" % (color[keywords[j,i]])
+	return df
+
+# for all keywords that are repeated across topics, color them blue if all >= 2, 
+# green if some >= 2, and blue if all < 2
+def keyword_color(repeated_keywords, num_runs, num_words, keywords, weights):
+	color = {}
+	for keyword in repeated_keywords:
+		color[keyword] = None
+	for i in range(num_runs):
+		for j in range(num_words):
+			if keywords[i,j] in repeated_keywords:
+				ratio = weights[i,j]/weights[i,num_words-1]
+				if ratio >= 2.0:
+					if color[keywords[i,j]] is None:
+						color[keywords[i,j]] = 'yellow'
+					elif color[keywords[i,j]] == 'blue':
+						color[keywords[i,j]] = 'green'
+				else:
+					if color[keywords[i,j]] is None:
+						color[keywords[i,j]] = 'blue'
+					elif color[keywords[i,j]] == 'yellow':
+						color[keywords[i,j]] = 'green'
+	return color
 
 # controller
 

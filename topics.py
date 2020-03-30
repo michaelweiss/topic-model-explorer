@@ -45,30 +45,6 @@ class TopicModel:
 	def chunksize(self, corpus, number_of_chunks):
 		return math.ceil(len(corpus.documents) / number_of_chunks)
 
-	# def show_topics(self, number_of_words):
-	# 	return self.lda.show_topics(num_topics=self.number_of_topics, 
-	# 		num_words=number_of_words, formatted=False)
-
-	# def get_document_topics(document):
-	# return lda.
-
-	# def topics_to_csv(self, number_of_words):
-	# 	print("*** TopicModel.Topics to csv")
-	# 	print(self.lda)
-	# 	r = "topic, content\n"
-	# 	for index, topic in self.show_topics(number_of_words):
-	# 		line = "topic_{},".format(index)
-	# 		for w in topic:
-	# 			line += " " + self.corpus.dictionary[int(w[0])]
-	# 		r += line + "\n"
-	# 	return r
-
-	# def read_topics(self, csv):
-	# 	return pd.read_csv(StringIO(csv))
-
-	# def topics(self, number_of_words):
-	# 	return self.read_topics(self.topics_to_csv(number_of_words))
-
 class LDA:
 	def __init__(self, lda):
 		self.lda = lda
@@ -112,9 +88,15 @@ class TopicAlignment:
 		self.number_of_runs = number_of_runs
 
 	def fit(self, progress_update):
+		# don't store the computed LDA models; in this way, they don't get 
+		# included in the hash streamlit uses to cache results
 		lda_models = self.lda_model_runs(progress_update)
-		self.topics = self.topics(lda_models)
+		# determine the matching topics across the different runs
 		self.matches = self.matches(lda_models)
+		# find the top topic keywords for each topic and each run
+		self.topics = self.topics(lda_models)
+		# collect the keywords and associated weights for each topic across all topic models
+		self.keywords, self.weights = self.keywords_with_weights(lda_models)
 
 	# create a group of topic models with the same number of topics
 	def lda_model_runs(self, progress_update):
@@ -143,11 +125,31 @@ class TopicAlignment:
 		# first column are the topics of the first topic model
 		matches[0] = range(self.number_of_topics)
 		# minimize the total misalignment between topics
-		for i in range(1, len(lda_models)):
+		for i in range(1, self.number_of_runs):
 			_, cols = linear_sum_assignment(diffs[i-1])
 			# each column contains the topics that align with the topics of the first topic
 			matches[i] = cols
 		return matches
+
+	def keywords_with_weights(self, lda_models):
+		keywords = []
+		weights = []
+		for topic in  range(self.number_of_topics):
+			keywords_for_topic = pd.DataFrame()
+			weights_for_topic = pd.DataFrame()
+			for i in range(self.number_of_runs):
+				keywords_for_topic[i] = [tw[0] for tw 
+					in lda_models[i].lda.show_topic(self.matches[i][topic], 10)]
+				weights_for_topic[i] = [tw[1] for tw 
+					in lda_models[i].lda.show_topic(self.matches[i][topic], 10)]
+			keywords.append(keywords_for_topic)
+			weights.append(weights_for_topic)
+		return keywords, weights
+
+	# documents = pd.DataFrame()
+	# for run in range(len(lda_models)):
+	# 	# todo: while correct, this is inefficient as the DTM is recomputed for each run
+	# 	documents[run] = document_topics_matrix(lda_models[run])[matches[run][topic]]
 
 class Corpus:
 	def __init__(self, documents):
