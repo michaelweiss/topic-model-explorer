@@ -50,6 +50,9 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 
 			Highlighting shows which topics correspond across the different runs.
 			The alignment is calculated based on minimizing the sum of the differences between topics.
+			
+			Note: The difference between two topics is computed as the average Jaccard distance, which measures
+			the overlap between consecutive subsets of the first N keywords in both topics.
 			"""
 			st.table(alignment.topics.style
 				.apply(highlight_topic, topic=selected_topic, matches=alignment.matches, axis=None))
@@ -57,14 +60,18 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			"""
 			This table shows the alignment across runs for a single topic.
 
+			Keywords that are repeated across most topics are highlighted. The threshold is set
+			to 75% of the topics, so for 4 runs, keywords will be highlighted if they are repeated 
+			across 3 or more runs.
+
 			Colors are assigned based on relative keyword weight (ratio of keyword weight 
 			and the lowest keyword weight for the top-10 keywords) for a given run. Keywords 
 			are colored *yellow* if the ratio is >= 2 across all runs, *green* if it is >= 2 for 
 			some of the runs, and *blue* if it is < 2 for all runs.
 			"""
 			st.table(alignment.keywords[selected_topic].style
-				.apply(highlight_repeated_keywords, weights=alignment.weights[selected_topic], axis=None))
-			st.table(alignment.weights[selected_topic])
+				.apply(highlight_repeated_keywords, weights=alignment.weights[selected_topic], 
+					min_runs=int(number_of_runs * 0.75), axis=None))
 
 # view helpers
 
@@ -86,7 +93,7 @@ def highlight_topic(x, topic, matches, color="lightgreen"):
 		df[run].loc[matches[run][topic]] = color
 	return df
 
-def highlight_repeated_keywords(keywords, weights):
+def highlight_repeated_keywords(keywords, weights, min_runs):
 	df = pd.DataFrame('', keywords.index, keywords.columns)
 	num_runs, num_words = len(keywords.columns), len(keywords.index)
 	# extract array from data frame
@@ -102,7 +109,7 @@ def highlight_repeated_keywords(keywords, weights):
 				i = i + 1
 		# add keyword to repeated_keywords if it occurs in each run
 		# can modify this to some percentage of the runs		
-		if i == num_runs - 1:
+		if i >= min_runs - 1:
 			repeated_keywords.append(keyword)
 	color = keyword_color(repeated_keywords, num_runs, num_words, keywords, weights)
 	for j in range(num_runs):
