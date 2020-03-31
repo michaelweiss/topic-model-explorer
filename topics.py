@@ -49,14 +49,11 @@ class LDA:
 	def __init__(self, lda):
 		self.lda = lda
 
-	def corpus(self):
-		return lda.corpus  # bow representation, our corpus.bow()
-
 	def number_of_topics(self):
-		return lda.num_topics
+		return self.lda.num_topics
 
 	def chunksize(self):
-		return lda.chunksize
+		return self.lda.chunksize
 
 	def show_topics(self, number_of_topics, number_of_words):
 		return self.lda.show_topics(num_topics=number_of_topics, 
@@ -79,6 +76,18 @@ class LDA:
 		diff, _ = self.lda.diff(other.lda, distance='jaccard', num_words=k)
 		return diff
 
+	def document_topics_matrix(self, corpus):
+		dtm = []
+		for document_bow in corpus.bow():
+			dtm.append(self.topics_sparse_to_full(self.get_document_topics(document_bow)))
+		return pd.DataFrame(dtm)
+
+	def topics_sparse_to_full(self, topics):
+		topics_full = [0] * self.number_of_topics()  # pythonic way of creating a list of zeros
+		for topic, score in topics:
+			topics_full[topic] = score
+		return topics_full
+
 class TopicAlignment:
 	def __init__(self, topic_model, corpus, number_of_topics, number_of_chunks, number_of_runs):
 		self.topic_model = topic_model
@@ -97,6 +106,8 @@ class TopicAlignment:
 		self.topics = self.topics(lda_models)
 		# collect the keywords and associated weights for each topic across all topic models
 		self.keywords, self.weights = self.keywords_with_weights(lda_models)
+		# find the topics for each document
+		self.dtm, self.documents = self.documents(lda_models)
 
 	# create a group of topic models with the same number of topics
 	def lda_model_runs(self, progress_update):
@@ -132,9 +143,8 @@ class TopicAlignment:
 		return matches
 
 	def keywords_with_weights(self, lda_models):
-		keywords = []
-		weights = []
-		for topic in  range(self.number_of_topics):
+		keywords, weights = [], []
+		for topic in range(self.number_of_topics):
 			keywords_for_topic = pd.DataFrame()
 			weights_for_topic = pd.DataFrame()
 			for i in range(self.number_of_runs):
@@ -146,10 +156,16 @@ class TopicAlignment:
 			weights.append(weights_for_topic)
 		return keywords, weights
 
-	# documents = pd.DataFrame()
-	# for run in range(len(lda_models)):
-	# 	# todo: while correct, this is inefficient as the DTM is recomputed for each run
-	# 	documents[run] = document_topics_matrix(lda_models[run])[matches[run][topic]]
+	def documents(self, lda_models):
+		dtm = [lda_models[i].document_topics_matrix(self.corpus)
+			for i in range(self.number_of_runs)]
+		documents = []
+		for topic in range(self.number_of_topics):
+			documents_for_topic = pd.DataFrame()
+			for i in range(self.number_of_runs):
+				documents_for_topic[i] = dtm[i][self.matches[i][topic]]
+			documents.append(documents_for_topic)
+		return dtm, documents
 
 class Corpus:
 	def __init__(self, documents):

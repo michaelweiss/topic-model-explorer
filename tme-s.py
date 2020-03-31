@@ -10,9 +10,8 @@ from topics import TopicAlignment
 
 # model
 
-@st.cache(allow_output_mutation=True, suppress_st_warning=True)
+@st.cache(allow_output_mutation=True)
 def load_corpus(url, stopwords):
-	st.markdown("Cache miss: load_corpus")
 	return tm.load_corpus(url, stopwords)
 
 @st.cache(suppress_st_warning=True)
@@ -85,7 +84,16 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 				.apply(highlight_repeated_keywords, weights=alignment.weights[selected_topic], 
 					min_runs=int(number_of_runs * 0.75), axis=None).render(), 
 				"tm-{}-{}-keywords.html".format(number_of_topics, selected_topic),
-				title="Download keywords (with colors)")
+				"Download keywords (with colors)")
+			download_link_from_csv(alignment.weights[selected_topic].to_csv(index=False),
+				"tm-{}-{}-weights.csv".format(number_of_topics, selected_topic),
+				"Download keyword weights")
+			"""
+			The following table shows the weights of all documents for this topic:
+			"""
+			documents = alignment.documents[selected_topic].copy()
+			documents.insert(0, "content", corpus.documents["content"])
+			st.dataframe(documents)
 
 # view helpers
 
@@ -113,17 +121,22 @@ def highlight_repeated_keywords(keywords, weights, min_runs):
 	# extract array from data frame
 	# we transpose the array so that each row represents one run
 	keywords = keywords.values.T
+	all_keywords = set([])
 	weights = weights.values.T
+	# collect all keywords and use those to count repeats
+	# the first run should not be considered special
+	for i in range(num_runs):
+		all_keywords = all_keywords.union(set(keywords[i]))
 	repeated_keywords = []
-	for keyword in keywords[0]:
+	for keyword in all_keywords:
 		# todo: change index, i is used to represent the run elsewhere
 		i = 0
-		for run in range(1, num_runs):
+		for run in range(num_runs):
 			if keyword in keywords[run]:
 				i = i + 1
 		# add keyword to repeated_keywords if it occurs in each run
 		# can modify this to some percentage of the runs		
-		if i >= min_runs - 1:
+		if i >= min_runs:
 			repeated_keywords.append(keyword)
 	color = keyword_color(repeated_keywords, num_runs, num_words, keywords, weights)
 	for j in range(num_runs):
