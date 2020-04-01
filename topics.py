@@ -80,6 +80,7 @@ class LDA:
 		dtm = []
 		for document_bow in corpus.bow():
 			dtm.append(self.topics_sparse_to_full(self.get_document_topics(document_bow)))
+			tcid = corpus.dictionary.id2token
 		return pd.DataFrame(dtm)
 
 	def topics_sparse_to_full(self, topics):

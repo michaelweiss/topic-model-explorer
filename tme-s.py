@@ -8,6 +8,8 @@ import base64
 from topics import TopicModel
 from topics import TopicAlignment
 
+from gensim import utils
+
 # model
 
 @st.cache(allow_output_mutation=True)
@@ -38,6 +40,11 @@ def show_documents(corpus):
 			"Download stopwords")
 	else:
 		st.markdown("Please upload a corpus.")
+
+def show_documents_bow(corpus):
+		st.markdown("Bag-of-words representation of the documents:")
+		tcid = utils.revdict(corpus.dictionary.token2id)
+		st.dataframe([[(tcid[t], w) for (t, w) in doc] for doc in corpus.bow()])
 
 def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs, show_all=True):
 	st.header("Topic model runs")
@@ -183,12 +190,9 @@ def sort_by_average_topic_weight(documents, cut_off=0.60):
 	documents_to_show_average_weight = []
 	for index, row in documents.iterrows():
 		above_cut_off_weights = [weight for weight in row if weight >= cut_off]
-		# st.write(index, above_cut_off_weights)
 		if len(above_cut_off_weights) >= 0.75 * num_runs:
 			documents_to_show.append(index)
 			documents_to_show_average_weight.append(np.average(above_cut_off_weights))
-	# st.write('documents_to_show', documents_to_show)
-	# st.write('documents_to_show_average_weight', documents_to_show_average_weight)
 	documents_to_show_index = np.argsort(-np.array(documents_to_show_average_weight))
 	return pd.DataFrame(index=[documents_to_show[i] for i in documents_to_show_index],
 		data=[documents_to_show_average_weight[i] for i in documents_to_show_index], 
