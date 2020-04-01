@@ -88,12 +88,20 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			download_link_from_csv(alignment.weights[selected_topic].to_csv(index=False),
 				"tm-{}-{}-weights.csv".format(number_of_topics, selected_topic),
 				"Download keyword weights")
+			documents_cut_off = st.sidebar.slider("Minimum weight for documents to show", 0, 100, 60)
 			"""
-			The following table shows the weights of all documents for this topic:
+			The following table shows the loadings of all documents for this topic. Those documents must 
+			have their weights above the minimum weight in at least 75% (or 3 out of 4) of the runs.
 			"""
-			documents = alignment.documents[selected_topic].copy()
-			documents.insert(0, "content", corpus.documents["content"])
-			st.dataframe(documents)
+			document_topic_matrix = alignment.documents[selected_topic]
+			documents_to_show = sort_by_average_topic_weight(document_topic_matrix, cut_off=documents_cut_off/100.0)
+			selected_documents = documents_to_show.index.tolist()
+			documents_to_show["name"] = corpus.documents["name"][selected_documents]
+			documents_to_show["content"] = corpus.documents["content"][selected_documents]
+			st.dataframe(documents_to_show)
+			download_link_from_csv(documents_to_show.to_csv(index=False),
+				"tm-{}-{}-documents.csv".format(number_of_topics, selected_topic),
+				"Download documents")
 
 # view helpers
 
@@ -166,6 +174,25 @@ def keyword_color(repeated_keywords, num_runs, num_words, keywords, weights):
 					elif color[keywords[i,j]] == 'yellow':
 						color[keywords[i,j]] = 'green'
 	return color
+
+# implements the rule that in at least x% of the runs the document has to
+# have a weight at or above the cut-off value - for a given topic
+def sort_by_average_topic_weight(documents, cut_off=0.60):
+	num_runs = len(documents.columns)
+	documents_to_show = []
+	documents_to_show_average_weight = []
+	for index, row in documents.iterrows():
+		above_cut_off_weights = [weight for weight in row if weight >= cut_off]
+		# st.write(index, above_cut_off_weights)
+		if len(above_cut_off_weights) >= 0.75 * num_runs:
+			documents_to_show.append(index)
+			documents_to_show_average_weight.append(np.average(above_cut_off_weights))
+	# st.write('documents_to_show', documents_to_show)
+	# st.write('documents_to_show_average_weight', documents_to_show_average_weight)
+	documents_to_show_index = np.argsort(-np.array(documents_to_show_average_weight))
+	return pd.DataFrame(index=[documents_to_show[i] for i in documents_to_show_index],
+		data=[documents_to_show_average_weight[i] for i in documents_to_show_index], 
+		columns=["loading"])
 
 def download_link_from_csv(csv, file_name, title="Download"):
 	b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
