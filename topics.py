@@ -181,6 +181,7 @@ class Corpus:
 	def preprocess(self, user_defined_stopwords):
 		self.stopwords_en = self.read_stopwords("stopwords-en.txt")
 		self.user_defined_stopwords = user_defined_stopwords.split('\n')
+		self.user_defined_stopwords = [word.strip() for word in self.user_defined_stopwords]
 		self.stopwords = self.stopwords_en + self.user_defined_stopwords
 		self.tokens = [[word for word in sub(r'[^A-Za-z0-9]+', ' ', document).lower().split() 
 				if word not in self.stopwords] 
