@@ -53,7 +53,7 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 	else:
 		selected_topic = st.sidebar.selectbox("Select topic to highlight", range(number_of_topics), 0)
 		alignment = find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs)
-		if st.sidebar.checkbox("Show all topics", value=False):
+		if st.sidebar.checkbox("Show all topics", value=True):
 			"""
 			This table gives an overview of the topics in each run.
 
