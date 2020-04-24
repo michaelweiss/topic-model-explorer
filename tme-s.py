@@ -10,6 +10,8 @@ from topics import TopicAlignment
 
 from gensim import utils
 
+import math
+
 # model
 
 @st.cache(allow_output_mutation=True)
@@ -21,7 +23,7 @@ def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_r
 	status = st.markdown("Fitting topic models:")
 	progress_bar = st.progress(0)
 	def progress_update(run):
-		progress_bar.progress(int(100 * (run + 1)/number_of_runs))
+		progress_bar.progress(math.ceil(100 * (run + 1)/number_of_runs))
 	alignment = TopicAlignment(tm, corpus, number_of_topics, number_of_chunks, number_of_runs)
 	alignment.fit(progress_update)
 	hide_status_indicators(status, progress_bar)

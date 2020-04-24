@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-import gensim as gs 
+import gensim as gs
 
 from gensim import models
 from gensim.models.coherencemodel import CoherenceModel
@@ -16,6 +16,9 @@ import math
 
 from io import StringIO
 from re import sub
+
+import nltk
+from nltk.stem import WordNetLemmatizer
 
 class TopicModel:
 	def gensim_version(self):
@@ -183,8 +186,8 @@ class Corpus:
 		self.user_defined_stopwords = user_defined_stopwords.split('\n')
 		self.user_defined_stopwords = [word.strip() for word in self.user_defined_stopwords]
 		self.stopwords = self.stopwords_en + self.user_defined_stopwords
-		self.tokens = [[word for word in sub(r'[^A-Za-z0-9]+', ' ', document).lower().split() 
-				if word not in self.stopwords] 
+		self.tokens = [[word for word in [self.lemmatize(word) for word in self.tokenize(document)]
+				if word not in self.stopwords]
 			for document in self.documents['content']]
 		self.dictionary = Dictionary(self.tokens)
 
@@ -192,9 +195,20 @@ class Corpus:
 		file = open(file, 'r')
 		return file.read().split('\n')
 
+	def tokenize(self, document):
+		return sub(r'[^A-Za-z0-9]+', ' ', document).lower().split()
+
+	def lemmatize(self, word):
+		lemmatizer = WordNetLemmatizer()
+		return lemmatizer.lemmatize(word)
+
 	def bow(self):
 		return [self.dictionary.doc2bow(doc) for doc in self.tokens]
 
 	def average_document_length(self):
 		return np.mean(map(len, self.tokens))
+
+# initialize
+
+nltk.download('wordnet') 
 
