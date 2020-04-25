@@ -19,17 +19,18 @@ from re import sub
 
 import nltk
 from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import MWETokenizer
 
 class TopicModel:
 	def gensim_version(self):
 		return gs.__version__
 
-	def load_corpus(self, url, stopwords):
+	def load_corpus(self, url, stopwords, multiwords):
 		if url is not None:
 			url.seek(0)	 # move read head back to the start (StringIO behaves like a file)
 			documents = pd.read_csv(url)
 			corpus = Corpus(documents)
-			corpus.preprocess(stopwords)
+			corpus.preprocess(stopwords, multiwords)
 			return corpus
 		else:
 			return None
@@ -181,19 +182,30 @@ class Corpus:
 			for document in documents['content']]
 		return documents
 
-	def preprocess(self, user_defined_stopwords):
+	def preprocess(self, user_defined_stopwords, multiwords):
 		self.stopwords_en = self.read_stopwords("stopwords-en.txt")
 		self.user_defined_stopwords = user_defined_stopwords.split('\n')
 		self.user_defined_stopwords = [word.strip() for word in self.user_defined_stopwords]
 		self.stopwords = self.stopwords_en + self.user_defined_stopwords
-		self.tokens = [[word for word in [self.lemmatize(word) for word in self.tokenize(document)]
+		tokenizer = self.create_tokenizer(multiwords)
+		self.tokens = [[word for word in tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
 				if word not in self.stopwords]
 			for document in self.documents['content']]
+		# self.tokens = [word for word in [[self.lemmatize(word) for word in self.tokenize(document)]
+		# 	for document in self.documents['content']]]
+		# self.tokens = [tokenizer.tokenize(word_list) for word_list in self.tokens]
+		# self.tokens = [word for word in word_list if word not in self.stopwords]
 		self.dictionary = Dictionary(self.tokens)
 
 	def read_stopwords(self, file):
 		file = open(file, 'r')
 		return file.read().split('\n')
+
+	def create_tokenizer(self, multiwords):
+		tokenizer = MWETokenizer()
+		for mwe in tokenizer.tokenize(multiwords.split('\n')):
+			tokenizer.add_mwe(mwe.split(' '))
+		return tokenizer
 
 	def tokenize(self, document):
 		return sub(r'[^A-Za-z0-9]+', ' ', document).lower().split()

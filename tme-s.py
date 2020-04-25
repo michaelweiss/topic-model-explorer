@@ -15,8 +15,8 @@ import math
 # model
 
 @st.cache(allow_output_mutation=True)
-def load_corpus(url, stopwords):
-	return tm.load_corpus(url, stopwords)
+def load_corpus(url, stopwords, multiwords):
+	return tm.load_corpus(url, stopwords, multiwords)
 
 @st.cache(suppress_st_warning=True)
 def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs):
@@ -216,7 +216,8 @@ def app(tm):
 	st.sidebar.title("Topic Model Explorer")
 	url = st.sidebar.file_uploader("Corpus", type="csv")
 	stopwords = st.sidebar.text_area("Stopwords (one per line)")
-	corpus = load_corpus(url, stopwords)
+	multiwords = st.sidebar.text_area("Multiwords (one per line)")
+	corpus = load_corpus(url, stopwords, multiwords)
 	if st.sidebar.checkbox("Show documents"):
 		show_documents(corpus)
 	number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
