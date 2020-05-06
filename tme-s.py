@@ -222,7 +222,7 @@ def app(tm):
 		show_documents(corpus)
 	number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
 	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
-	number_of_runs = st.sidebar.slider("Number of runs", 1, 10, 4)
+	number_of_runs = st.sidebar.slider("Number of runs", 1, 50, 4)
 	if st.sidebar.checkbox("Show topic model runs", value=False):
 		show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
 
