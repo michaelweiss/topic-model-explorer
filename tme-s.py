@@ -18,8 +18,8 @@ import math
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
 
-# @st.cache(suppress_st_warning=True)
-@st.cache(hash_funcs = { TopicAlignment: id })
+@st.cache(suppress_st_warning=True)
+# @st.cache(hash_funcs = { TopicAlignment: id })
 def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs):
 	status = st.markdown("Fitting topic models:")
 	progress_bar = st.progress(0)
@@ -214,7 +214,7 @@ def download_link_from_html(html, file_name, title="Download"):
 # controller
 
 def app(tm):
-	st.sidebar.title("Topic Model Explorer (W-tool)")
+	st.sidebar.title("W-tool")
 	url = st.sidebar.file_uploader("Corpus", type="csv", encoding="utf-8")
 	stopwords = st.sidebar.text_area("Stopwords (one per line)")
 	multiwords = st.sidebar.text_area("Multiwords (one per line)")
