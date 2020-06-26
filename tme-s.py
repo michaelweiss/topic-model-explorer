@@ -214,7 +214,7 @@ def download_link_from_html(html, file_name, title="Download"):
 # controller
 
 def app(tm):
-	st.sidebar.title("W-tool")
+	st.sidebar.title("Topic Model Explorer")
 	url = st.sidebar.file_uploader("Corpus", type="csv", encoding="utf-8")
 	stopwords = st.sidebar.text_area("Stopwords (one per line)")
 	multiwords = st.sidebar.text_area("Multiwords (one per line)")
