@@ -214,15 +214,17 @@ def download_link_from_html(html, file_name, title="Download"):
 # controller
 
 def app(tm):
-	st.sidebar.title("Topic Model Explorer")
-	url = st.sidebar.file_uploader("Corpus", type="csv")
+	st.sidebar.title("Topic Model Explorer (W-tool)")
+	url = st.sidebar.file_uploader("Corpus", type="csv", encoding="utf-8")
 	stopwords = st.sidebar.text_area("Stopwords (one per line)")
 	multiwords = st.sidebar.text_area("Multiwords (one per line)")
 	corpus = load_corpus(url, stopwords, multiwords)
 	if st.sidebar.checkbox("Show documents"):
 		show_documents(corpus)
 	number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
-	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
+	# Default should be 1. 100 is the value used by Orange. We include this option for compatibility 
+	# with Orange and to examine the impact of this parameter.
+	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 1, 100)
 	number_of_runs = st.sidebar.slider("Number of runs", 1, 10, 4)
 	if st.sidebar.checkbox("Show topic model runs", value=False):
 		show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
