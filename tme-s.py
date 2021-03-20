@@ -77,14 +77,15 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 
 			Copy the text of a document you want to classify.
 
-			Topic numbers refer to the first (left-most) topic model run.
+			Topic numbers refer to the first topic model run, unless a different run is selected below.
 			"""
 			new_document = st.text_area("New document")
+			reference_topic_model = st.selectbox("Use this run as reference model", range(number_of_topics), 0)
 			if new_document:
 				document_bow = corpus.get_document_bow(new_document)
-				topics = alignment.lda_models[0].get_document_topics(document_bow)
+				topics = alignment.lda_models[reference_topic_model].get_document_topics(document_bow)
 				for t, w in sorted(topics, key=lambda tw: tw[1], reverse=True):
-					keywords = ", ".join([tw[0] for tw in alignment.lda_models[0].lda.show_topic(t, 3)])
+					keywords = ", ".join([tw[0] for tw in alignment.lda_models[reference_topic_model].lda.show_topic(t, 3)])
 					st.write("Topic {} ({}) with weight {}".format(t, keywords, w))
 		else:
 			"""
