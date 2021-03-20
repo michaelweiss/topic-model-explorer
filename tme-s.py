@@ -72,6 +72,9 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 				"tm-{}-runs.csv".format(number_of_topics), 
 				"Download topic model runs")
 			"""
+			## Topics of a new document
+			This is an experimental feature to find the topics a new document belong to.
+
 			Copy the text of a document you want to classify.
 			"""
 			new_document = st.text_area("New document")
