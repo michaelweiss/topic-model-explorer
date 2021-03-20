@@ -112,6 +112,7 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			download_link_from_csv(documents_to_show.to_csv(index=False),
 				"tm-{}-{}-documents.csv".format(number_of_topics, selected_topic),
 				"Download documents")
+		new_document = st.text_area("Classify document")
 
 # view helpers
 
