@@ -74,14 +74,14 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 				"Download topic model runs")
 			"""
 			## Topics of a new document
-			This is an experimental feature to find the topics a new document belong to.
+			This is an experimental feature to find the topics a new document belongs to.
 
 			Copy the text of a document you want to classify.
 
 			Topic numbers refer to the first topic model run, unless a different run is selected below.
 			"""
 			new_document = st.text_area("New document")
-			reference_topic_model = st.selectbox("Use this run as reference model", range(number_of_runs), 0)
+			reference_topic_model = st.selectbox("Use this run as the reference topic model", range(number_of_runs), 0)
 			if new_document:
 				document_bow = corpus.get_document_bow(new_document)
 				topics = alignment.lda_models[reference_topic_model].get_document_topics(document_bow)
