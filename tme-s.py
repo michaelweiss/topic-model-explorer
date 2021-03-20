@@ -71,6 +71,12 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			download_link_from_csv(alignment.topics.to_csv(index=False), 
 				"tm-{}-runs.csv".format(number_of_topics), 
 				"Download topic model runs")
+			"""
+			Copy the text of a document you want to classify.
+			"""
+			new_document = st.text_area("New document")
+			if new_document:
+				st.write(new_document)
 		else:
 			"""
 			This table shows the alignment across runs for a single topic.
@@ -112,7 +118,6 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			download_link_from_csv(documents_to_show.to_csv(index=False),
 				"tm-{}-{}-documents.csv".format(number_of_topics, selected_topic),
 				"Download documents")
-		new_document = st.text_area("Classify document")
 
 # view helpers
 
