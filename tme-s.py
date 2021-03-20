@@ -83,7 +83,7 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			if new_document:
 				document_bow = corpus.get_document_bow(new_document)
 				topics = alignment.lda_models[0].get_document_topics(document_bow)
-				for t, w in sorted(topics, key=lambda tw: tw[1]):
+				for t, w in sorted(topics, key=lambda tw: tw[1], reverse=True):
 					keywords = ", ".join([tw[0] for tw in alignment.lda_models[0].lda.show_topic(t, 3)])
 					st.write("Topic {} ({}) with weight {}".format(t, keywords, w))
 		else:
