@@ -107,13 +107,13 @@ class TopicAlignment:
 		# included in the hash streamlit uses to cache results
 		self.lda_models = self.lda_model_runs(progress_update)
 		# determine the matching topics across the different runs
-		self.matches = self.matches(lda_models)
+		self.matches = self.matches(self.lda_models)
 		# find the top topic keywords for each topic and each run
-		self.topics = self.topics(lda_models)
+		self.topics = self.topics(self.lda_models)
 		# collect the keywords and associated weights for each topic across all topic models
-		self.keywords, self.weights = self.keywords_with_weights(lda_models)
+		self.keywords, self.weights = self.keywords_with_weights(self.lda_models)
 		# find the topics for each document
-		self.dtm, self.documents = self.documents(lda_models)
+		self.dtm, self.documents = self.documents(self.lda_models)
 
 	# create a group of topic models with the same number of topics
 	def lda_model_runs(self, progress_update):
