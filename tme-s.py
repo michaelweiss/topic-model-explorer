@@ -18,7 +18,8 @@ import math
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
 
-@st.cache(suppress_st_warning=True)
+# @st.cache(suppress_st_warning=True)
+@st.cache(allow_output_mutation=True)
 # @st.cache(hash_funcs = { TopicAlignment: id })
 def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs):
 	status = st.markdown("Fitting topic models:")
