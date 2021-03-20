@@ -188,8 +188,8 @@ class Corpus:
 		self.user_defined_stopwords = user_defined_stopwords.split('\n')
 		self.user_defined_stopwords = [word.strip() for word in self.user_defined_stopwords]
 		self.stopwords = self.stopwords_en + self.user_defined_stopwords
-		tokenizer = self.create_tokenizer(multiwords)
-		self.tokens = [[word for word in tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
+		self.tokenizer = self.create_tokenizer(multiwords)
+		self.tokens = [[word for word in self.tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
 				if word not in self.stopwords]
 			for document in self.documents['content']]
 		# self.tokens = [word for word in [[self.lemmatize(word) for word in self.tokenize(document)]
@@ -197,6 +197,10 @@ class Corpus:
 		# self.tokens = [tokenizer.tokenize(word_list) for word_list in self.tokens]
 		# self.tokens = [word for word in word_list if word not in self.stopwords]
 		self.dictionary = Dictionary(self.tokens)
+
+	def preprocess_document(self, document):
+		return [word for word in self.tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
+			if word not in self.stopwords]
 
 	def read_stopwords(self, file):
 		file = open(file, 'r')
@@ -217,6 +221,10 @@ class Corpus:
 
 	def bow(self):
 		return [self.dictionary.doc2bow(doc) for doc in self.tokens]
+
+	def get_document_bow(self, document):
+		document_tokens = self.preprocess_document(document)
+		return self.dictionary.doc2bow(document_tokens)
 
 	def average_document_length(self):
 		return np.mean(map(len, self.tokens))
