@@ -102,9 +102,10 @@ class TopicAlignment:
 		self.number_of_runs = number_of_runs
 
 	def fit(self, progress_update):
+		# experimental: remember the computed LDA models
 		# don't store the computed LDA models; in this way, they don't get 
 		# included in the hash streamlit uses to cache results
-		lda_models = self.lda_model_runs(progress_update)
+		self.lda_models = self.lda_model_runs(progress_update)
 		# determine the matching topics across the different runs
 		self.matches = self.matches(lda_models)
 		# find the top topic keywords for each topic and each run
