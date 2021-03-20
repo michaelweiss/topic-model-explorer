@@ -80,8 +80,8 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			new_document = st.text_area("New document")
 			if new_document:
 				document_bow = corpus.get_document_bow(new_document)
-				# topics = alignment.lda_models[0].get_document_topics(document_bow)
-				st.write(document_bow)
+				topics = alignment.lda_models[0].get_document_topics(document_bow)
+				st.write(topics)
 		else:
 			"""
 			This table shows the alignment across runs for a single topic.
