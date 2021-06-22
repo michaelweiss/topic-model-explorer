@@ -92,7 +92,7 @@ class TopicModel:
 		if url is not None:
 			url.seek(0)	 # move read head back to the start (StringIO behaves like a file)
 			documents = pd.read_csv(url)
-			if('name' not in documents or 'content' not in documents):
+			if ('name' not in documents or 'content' not in documents):
 				return None
 			corpus = Corpus(documents)
 			corpus.preprocess(stopwords, multiwords)

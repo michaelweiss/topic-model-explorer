@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import base64
 
 from topics import TopicModel
 
@@ -12,45 +13,69 @@ from topics import TopicModel
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
 
+@st.cache(hash_funcs={TopicModel: id})
+def topics(corpus, number_of_topics, number_of_chunks):
+	model = tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
+	return pd.DataFrame([[" ".join([tw[0] for tw in model.lda.show_topic(t, 10)])] 
+		for t in range(number_of_topics)])
+
 # view
 
 def show_documents(corpus):
 	st.header("Documents")
 	if corpus is not None:
-		check_for_name_content_columns(corpus.documents)
-		st.dataframe(corpus.documents, height=150)
-		# download_link_from_csv("\n".join(corpus.stopwords), "stopwords.txt",
-		# 	"Download stopwords")
+		if st.checkbox("Show table with full text", value=False):
+			st.table(corpus.documents)
+		else:
+			st.dataframe(corpus.documents, height=150)
+		download_link_from_csv("\n".join(corpus.stopwords), "stopwords.txt",
+			"Download stopwords")
 	else:
-		st.markdown("Please upload a corpus.")
+		st.markdown("No corpus loaded, or missing the expected *name* and *content* columns")
+
+def show_topics(corpus, number_of_topics, number_of_chunks=100):
+	st.header("Topics")
+	if corpus is None:
+		st.markdown("Please upload a corpus first")
+	else:
+		topics_df = topics(corpus, number_of_topics, number_of_chunks)
+		st.table(topics_df)
+		download_link(topics_df, "topic-keywords-{}.csv".format(number_of_topics),
+			"Download topic keywords")
 
 # view helpers
 
-def check_for_name_content_columns(documents):
-	if 'name' not in documents or 'content' not in documents:
-		st.markdown('''
-		The corpus must have a *name* and a *content* column.
-		''')
+def download_link_from_csv(csv, file_name, title="Download"):
+	b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+	href = "<a href='data:file/csv;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
+	st.markdown(href, unsafe_allow_html=True)
+
+def download_link(dataframe, file_name, title="Download"):
+	csv = dataframe.to_csv(index=False)
+	download_link_from_csv(csv, file_name, title)
 
 # controller
 
 tm = TopicModel()
 
 st.sidebar.title("Topic Model Explorer")
-st.sidebar.write("Using streamlist {} and gensim {}".format(st.__version__, tm.gensim_version()))
+st.sidebar.write("Uses [streamlit](https://streamlit.io) {} and [gensim](https://radimrehurek.com/gensim/) {}".format(st.__version__, tm.gensim_version()))
 
 url = st.sidebar.file_uploader("Corpus", type="csv")
-stopwords = ""
-multiwords = ""
+stopwords = st.sidebar.text_area("Stopwords (one per line)")
+multiwords = st.sidebar.text_area("Multiwords (one per line)")
 corpus = load_corpus(url, stopwords, multiwords)
 
 if st.sidebar.checkbox("Show documents"):
 	show_documents(corpus)
 
-# stopwords = st.sidebar.text_area("Stopwords (one per line)")
-# update_stopwords = st.sidebar.button("Update stopwords")
+number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
 
-# if update_stopwords:
-# 	if url is not None:
-# 		corpus = load_corpus(url, "", "")
-# 		corpus.update_stopwords(stopwords)
+# Default should be 1. 100 is the value used by Orange. We include this option for compatibility 
+# with Orange and to examine the impact of this parameter.
+number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 1)
+
+if st.sidebar.checkbox("Show topics", value=False):
+	show_topics(corpus, number_of_topics, number_of_chunks)
+
+
