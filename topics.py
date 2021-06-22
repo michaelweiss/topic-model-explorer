@@ -21,6 +21,69 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import MWETokenizer
 
+"""
+Corpus of documents.
+"""
+class Corpus:
+	def __init__(self, documents):
+		# TODO: do I still need to check for that, or is unicode handled fine now?
+		self.documents = self.to_ascii(documents)
+
+	def to_ascii(self, documents):
+		# replace non-ascii symbols left by text processing software
+		documents['content'] = [sub(r'[^A-Za-z0-9,\.?!]+', ' ', document)
+			for document in documents['content']]
+		return documents
+
+	def preprocess(self, user_defined_stopwords, multiwords):
+		self.stopwords_en = self.read_stopwords("stopwords-en.txt")
+		self.user_defined_stopwords = user_defined_stopwords.split('\n')
+		self.user_defined_stopwords = [word.strip() for word in self.user_defined_stopwords]
+		self.stopwords = self.stopwords_en + self.user_defined_stopwords
+		self.tokenizer = self.create_tokenizer(multiwords)
+		self.tokens = [[word for word in self.tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
+				if word not in self.stopwords]
+			for document in self.documents['content']]
+		# self.tokens = [word for word in [[self.lemmatize(word) for word in self.tokenize(document)]
+		# 	for document in self.documents['content']]]
+		# self.tokens = [tokenizer.tokenize(word_list) for word_list in self.tokens]
+		# self.tokens = [word for word in word_list if word not in self.stopwords]
+		self.dictionary = Dictionary(self.tokens)
+
+	def preprocess_document(self, document):
+		return [word for word in self.tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
+			if word not in self.stopwords]
+
+	def read_stopwords(self, file):
+		file = open(file, 'r')
+		return file.read().split('\n')
+
+	def create_tokenizer(self, multiwords):
+		tokenizer = MWETokenizer()
+		for mwe in tokenizer.tokenize(multiwords.split('\n')):
+			tokenizer.add_mwe(mwe.split(' '))
+		return tokenizer
+
+	def tokenize(self, document):
+		return sub(r'[^A-Za-z0-9]+', ' ', document).lower().split()
+
+	def lemmatize(self, word):
+		lemmatizer = WordNetLemmatizer()
+		return lemmatizer.lemmatize(word)
+
+	def bow(self):
+		return [self.dictionary.doc2bow(doc) for doc in self.tokens]
+
+	def get_document_bow(self, document):
+		document_tokens = self.preprocess_document(document)
+		return self.dictionary.doc2bow(document_tokens)
+
+	def average_document_length(self):
+		return np.mean(map(len, self.tokens))
+
+"""
+Topic model of a corpus.
+"""
 class TopicModel:
 	def gensim_version(self):
 		return gs.__version__
@@ -29,6 +92,8 @@ class TopicModel:
 		if url is not None:
 			url.seek(0)	 # move read head back to the start (StringIO behaves like a file)
 			documents = pd.read_csv(url)
+			if('name' not in documents or 'content' not in documents):
+				return None
 			corpus = Corpus(documents)
 			corpus.preprocess(stopwords, multiwords)
 			return corpus
@@ -172,62 +237,6 @@ class TopicAlignment:
 				documents_for_topic[i] = dtm[i][self.matches[i][topic]]
 			documents.append(documents_for_topic)
 		return dtm, documents
-
-class Corpus:
-	def __init__(self, documents):
-		self.documents = self.to_ascii(documents)
-
-	def to_ascii(self, documents):
-		# replace non-ascii symbols left by text processing software
-		documents['content'] = [sub(r'[^A-Za-z0-9,\.?!]+', ' ', document)
-			for document in documents['content']]
-		return documents
-
-	def preprocess(self, user_defined_stopwords, multiwords):
-		self.stopwords_en = self.read_stopwords("stopwords-en.txt")
-		self.user_defined_stopwords = user_defined_stopwords.split('\n')
-		self.user_defined_stopwords = [word.strip() for word in self.user_defined_stopwords]
-		self.stopwords = self.stopwords_en + self.user_defined_stopwords
-		self.tokenizer = self.create_tokenizer(multiwords)
-		self.tokens = [[word for word in self.tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
-				if word not in self.stopwords]
-			for document in self.documents['content']]
-		# self.tokens = [word for word in [[self.lemmatize(word) for word in self.tokenize(document)]
-		# 	for document in self.documents['content']]]
-		# self.tokens = [tokenizer.tokenize(word_list) for word_list in self.tokens]
-		# self.tokens = [word for word in word_list if word not in self.stopwords]
-		self.dictionary = Dictionary(self.tokens)
-
-	def preprocess_document(self, document):
-		return [word for word in self.tokenizer.tokenize([self.lemmatize(word) for word in self.tokenize(document)])
-			if word not in self.stopwords]
-
-	def read_stopwords(self, file):
-		file = open(file, 'r')
-		return file.read().split('\n')
-
-	def create_tokenizer(self, multiwords):
-		tokenizer = MWETokenizer()
-		for mwe in tokenizer.tokenize(multiwords.split('\n')):
-			tokenizer.add_mwe(mwe.split(' '))
-		return tokenizer
-
-	def tokenize(self, document):
-		return sub(r'[^A-Za-z0-9]+', ' ', document).lower().split()
-
-	def lemmatize(self, word):
-		lemmatizer = WordNetLemmatizer()
-		return lemmatizer.lemmatize(word)
-
-	def bow(self):
-		return [self.dictionary.doc2bow(doc) for doc in self.tokens]
-
-	def get_document_bow(self, document):
-		document_tokens = self.preprocess_document(document)
-		return self.dictionary.doc2bow(document_tokens)
-
-	def average_document_length(self):
-		return np.mean(map(len, self.tokens))
 
 # initialize
 
