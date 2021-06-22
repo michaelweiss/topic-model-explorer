@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import base64
 
-from topics import TopicModel
+from topics import TopicModel, LDA
 
 # model
 
@@ -13,7 +13,7 @@ from topics import TopicModel
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
 
-@st.cache(hash_funcs={TopicModel: id})
+@st.cache(hash_funcs={LDA: id, pd.DataFrame: id})
 def topics(corpus, number_of_topics, number_of_chunks):
 	model = tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
 	return pd.DataFrame([[" ".join([tw[0] for tw in model.lda.show_topic(t, 10)])] 
@@ -74,6 +74,11 @@ number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
 # Default should be 1. 100 is the value used by Orange. We include this option for compatibility 
 # with Orange and to examine the impact of this parameter.
 number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 1)
+
+# The main reason to do this is that the first time a topic model is created, it does not
+# seem to be cached properly. Revisit, if this leads to long load times.
+if corpus is not None:
+	topics(corpus, number_of_topics, number_of_chunks)
 
 if st.sidebar.checkbox("Show topics", value=False):
 	show_topics(corpus, number_of_topics, number_of_chunks)
