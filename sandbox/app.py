@@ -10,7 +10,7 @@ if st.sidebar.checkbox('Show table'):
 	"""
 	df = pd.DataFrame({
 		'x': [1, 2, 3],
-		'x^2': [1, 4, 9]
+		'x^3': [x**3 for x in [1, 2, 3]]
 		})
 	df
 
@@ -18,8 +18,10 @@ if st.sidebar.checkbox('Show data frame'):
 	"""
 	# Line chart
 	"""
+	x = np.random.normal(0, 3, 60)
+	x = x.reshape(20, 3) # 20 rows with 3 cols
 	chart_data = pd.DataFrame(
-		np.random.randn(20, 3),
+		x,
 		columns = ['a', 'b', 'c'])
 	st.line_chart(chart_data)
 
