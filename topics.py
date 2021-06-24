@@ -145,7 +145,7 @@ class LDA:
 		diff, _ = self.lda.diff(other.lda, distance='jaccard', num_words=k)
 		return diff
 
-	def document_topics_matrix(self, corpus):
+	def document_topic_matrix(self, corpus):
 		dtm = []
 		for document_bow in corpus.bow():
 			dtm.append(self.topics_sparse_to_full(self.get_document_topics(document_bow)))

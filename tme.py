@@ -13,11 +13,16 @@ from topics import TopicModel, LDA
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
 
-@st.cache(hash_funcs={LDA: id, pd.DataFrame: id})
-def topics(corpus, number_of_topics, number_of_chunks):
-	model = tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
+@st.cache(hash_funcs={LDA: id})
+def topic_model(corpus, number_of_topics, number_of_chunks):
+	return tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
+
+def topics(model):
 	return pd.DataFrame([[" ".join([tw[0] for tw in model.lda.show_topic(t, 10)])] 
 		for t in range(number_of_topics)])
+
+def document_topic_matrix(model, corpus):
+	return model.document_topic_matrix(corpus)
 
 # view
 
@@ -38,10 +43,23 @@ def show_topics(corpus, number_of_topics, number_of_chunks=100):
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
-		topics_df = topics(corpus, number_of_topics, number_of_chunks)
+		topics_df = topics(topic_model(corpus, number_of_topics, number_of_chunks))
 		st.table(topics_df)
 		download_link(topics_df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
+
+def show_document_topic_matrix(corpus, number_of_topics, number_of_chunks=100):
+	st.header("Document topic matrix")
+	if corpus is None:
+		st.markdown("Please upload a corpus first")
+	else:
+		dtm_df = document_topic_matrix(topic_model(corpus, number_of_topics, number_of_chunks), corpus)
+		if "year" in corpus.documents:
+			dtm_df.insert(0, "year", corpus.documents["year"])
+		dtm_df.insert(0, "name", corpus.documents["name"])
+		st.dataframe(dtm_df, height=150)
+		download_link(dtm_df, "document-topic-matrix-{}.csv".format(number_of_topics),
+			"Download document topic matrix")
 
 # view helpers
 
@@ -71,16 +89,17 @@ if st.sidebar.checkbox("Show documents"):
 
 number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
 
-# Default should be 1. 100 is the value used by Orange. We include this option for compatibility 
-# with Orange and to examine the impact of this parameter.
+# Default should be 1. 100 is the value used by Orange (https://orangedatamining.com). We include 
+# this option for compatibility with Orange and to examine the impact of this parameter.
 number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 1)
 
 # The main reason to do this is that the first time a topic model is created, it does not
 # seem to be cached properly. Revisit, if this leads to long load times.
 if corpus is not None:
-	topics(corpus, number_of_topics, number_of_chunks)
+	topic_model(corpus, number_of_topics, number_of_chunks)
 
 if st.sidebar.checkbox("Show topics", value=False):
 	show_topics(corpus, number_of_topics, number_of_chunks)
 
-
+if st.sidebar.checkbox("Show document topic matrix", value=False):
+	show_document_topic_matrix(corpus, number_of_topics, number_of_chunks)
