@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import math
 import itertools
 import base64
 import graphviz as graphviz
+from pyvis.network import Network
 
 from topics import TopicModel, LDA
 
@@ -53,6 +55,26 @@ def topic_coocurrence_graph(model, corpus, number_of_topics, min_weight, min_edg
 					penwidth="{}".format(edge[i, j]))
 	return graph
 
+def topic_coocurrence_graph_pyvis(model, corpus, number_of_topics, min_weight, min_edges, smooth_edges):
+	dtm = document_topic_matrix(model, corpus).to_numpy()
+	keywords = ["\n" + "\n".join([tw[0] for tw in model.lda.show_topic(t, 3)])
+		for t in range(number_of_topics)]
+	graph = Network("600px", "100%", notebook=True, heading='')
+	total_topic_weights = tally_columns(dtm, number_of_topics)
+	for i in range(number_of_topics):
+		graph.add_node(i, label=keywords[i], size=4*10*math.sqrt(total_topic_weights[i]),
+			title="Topic {}".format(i))
+	edge = np.zeros((number_of_topics, number_of_topics))
+	for topic_weights in dtm:
+		topics = [k for k in range(number_of_topics) if topic_weights[k] >= min_weight]
+		for i, j in list(itertools.combinations(topics, 2)):
+			edge[i, j] = edge[i, j] + 1
+	for i in range(number_of_topics):
+		for j in range(number_of_topics):
+			if edge[i, j] >= min_edges:
+				graph.add_edge(i, j, value=edge[i, j], smooth=smooth_edges)
+	return graph
+
 # view
 
 def show_documents(corpus):
@@ -95,7 +117,7 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
-		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.5, value=0.1)
+		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.5, value=0.1, step=0.05)
 		min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
 		st.markdown('''
 			We consider topics to co-occur in the same document if the weight of both 
@@ -104,9 +126,16 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 			in a document (at least *minimum edges* times). Each node represents a 
 			topic. Node size reflects the total weight of the topic.
 		''')
-		graph = topic_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), 
-			corpus, number_of_topics, min_weight, min_edges)
-		st.graphviz_chart(graph)
+		if st.sidebar.radio("Visualization library to use", ("VisJS", "GraphViz"), index=0) == "VisJS":
+			smooth_edges = st.sidebar.checkbox("Draw with smooth edges", value=False)
+			graph_pyvis = topic_coocurrence_graph_pyvis(topic_model(corpus, number_of_topics, number_of_chunks), 
+				corpus, number_of_topics, min_weight, min_edges, smooth_edges)
+			graph_pyvis.show("graph.html")
+			components.html(open("graph.html", 'r', encoding='utf-8').read(), height=625)
+		else:
+			graph = topic_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), 
+				corpus, number_of_topics, min_weight, min_edges)
+			st.graphviz_chart(graph)
 
 # view helpers
 
