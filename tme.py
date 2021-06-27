@@ -89,8 +89,10 @@ def keyword_coocurrence_graph(model, corpus, selected_topic, min_edges, cut_off)
 	sentence_words = []
 	for document in documents:
 		for sentence in re.split('[?!.]', document):
-			sentence = re.sub(r'[^A-Za-z0-9]+', ' ', sentence)
-			words = [word for word in sentence.lower().split(" ") 
+			# sentence = re.sub(r'[^A-Za-z0-9]+', ' ', sentence)
+			# words = [word for word in sentence.lower().split(" ") 
+			# 	if word not in corpus.stopwords]
+			words = [word for word in corpus.tokenizer.tokenize([corpus.lemmatize(word) for word in corpus.tokenize(sentence)])
 				if word not in corpus.stopwords]
 			words = set(words)
 			for word in words:
@@ -133,6 +135,12 @@ def sort_by_topic(dtm, k, cut_off=0.80):
 	top_documents_index = np.argsort(-np.array(col_k))
 	return [index for index in top_documents_index 
 		if dtm[index][k] >= cut_off]
+
+def sort_topics(model, corpus):
+	dtm = document_topic_matrix(model, corpus).to_numpy()
+	total_topic_weights = tally_columns(dtm, number_of_topics)
+	top_topics = np.argsort(-np.array(total_topic_weights))
+	return top_topics
 
 # view
 
@@ -186,16 +194,22 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 			''')
 		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.5, value=0.1, step=0.05)
 		min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
-		if st.sidebar.radio("Visualization library to use", ("VisJS", "GraphViz"), index=0) == "VisJS":
-			smooth_edges = st.sidebar.checkbox("Draw with smooth edges", value=False)
+		graph_container = st.empty()
+		with st.beta_expander("Settings"):
+			library_to_use = st.radio("Visualization library to use", ("VisJS", "GraphViz"), index=0)
+			if library_to_use == "VisJS":
+				smooth_edges = st.checkbox("Draw with smooth edges", value=False)
+		if library_to_use == "VisJS":
 			graph_pyvis = topic_coocurrence_graph_pyvis(topic_model(corpus, number_of_topics, number_of_chunks), 
 				corpus, number_of_topics, min_weight, min_edges, smooth_edges)
 			graph_pyvis.show("topic-graph.html")
-			components.html(open("topic-graph.html", 'r', encoding='utf-8').read(), height=625)
+			with graph_container.beta_container():
+				components.html(open("topic-graph.html", 'r', encoding='utf-8').read(), height=625)
 		else:
 			graph = topic_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), 
 				corpus, number_of_topics, min_weight, min_edges)
-			st.graphviz_chart(graph)
+			with graph_container.beta_container():
+				st.graphviz_chart(graph)
 
 def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 	st.header("Keyword co-occurrences")
@@ -211,17 +225,23 @@ def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 				The thickness of an edge indicates how often two keywords occur 
 				together (at least *minimum edges* times). 
 			''')
-		keywords_selected_topic = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
+
+		navigate_topics_by_weight, keywords_selected_topic = topic_slider(number_of_topics)
 		keywords_cut_off = st.sidebar.slider("Minium topic weight", 0.0, 1.0, value=0.8, step=0.05)
 		keywords_min_edges = st.sidebar.slider("Minimum number of edges", 1, 15, value=5)
+		topic = keywords_selected_topic
+		if navigate_topics_by_weight:
+			topic_order = sort_topics(topic_model(corpus, number_of_topics, number_of_chunks), corpus)
+			topic = topic_order[topic]
 		graph, nodes, top_documents = keyword_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), corpus, 
-			keywords_selected_topic, keywords_min_edges, keywords_cut_off)
+			topic, keywords_min_edges, keywords_cut_off)
+		show_topic_info(corpus, number_of_topics, number_of_chunks, topic)
 		if len(nodes) == 0:
 			st.markdown("No graph. Use less restrictive criteria.")
 		else:
 			graph.show("keyword-graph.html")
 			components.html(open("keyword-graph.html", 'r', encoding='utf-8').read(), height=625)
-
+			
 # view helpers
 
 def download_link_from_csv(csv, file_name, title="Download"):
@@ -232,6 +252,24 @@ def download_link_from_csv(csv, file_name, title="Download"):
 def download_link(dataframe, file_name, title="Download"):
 	csv = dataframe.to_csv(index=False)
 	download_link_from_csv(csv, file_name, title)
+
+def show_topic_info(corpus, number_of_topics, number_of_chunks, selected_topic):
+	model = topic_model(corpus, number_of_topics, number_of_chunks)
+	topic_keywords = ", ".join([tw[0] for tw in model.lda.show_topic(selected_topic, 3)])
+	dtm = document_topic_matrix(model, corpus).to_numpy()
+	total_topic_weights = tally_columns(dtm, number_of_topics)
+	st.markdown("  ")
+	st.markdown("Keyword co-occurrences for topic **{}** ({}) with weight **{weight:.2f}**".format(
+		selected_topic, topic_keywords, weight=total_topic_weights[selected_topic]))
+	
+def topic_slider(number_of_topics):
+	with st.sidebar.beta_expander("Settings"):
+		navigate_topics_by_weight = st.checkbox("Navigate topics by order of weight", value=True)
+		if navigate_topics_by_weight:
+			selected_topic = st.sidebar.number_input("Show n-th largest topic", 0, number_of_topics-1)
+		else:
+			selected_topic = st.sidebar.number_input("Selected topic", 0, number_of_topics-1)		
+	return navigate_topics_by_weight, selected_topic
 
 # controller
 
