@@ -7,6 +7,7 @@ import numpy as np
 import math
 import itertools
 import base64
+import re
 import graphviz as graphviz
 from pyvis.network import Network
 
@@ -75,6 +76,64 @@ def topic_coocurrence_graph_pyvis(model, corpus, number_of_topics, min_weight, m
 				graph.add_edge(i, j, value=edge[i, j], smooth=smooth_edges)
 	return graph
 
+def keyword_coocurrence_graph(model, corpus, selected_topic, min_edges, cut_off):
+	# step 1: select most relevant documents for the selected topic
+	dtm = document_topic_matrix(model, corpus).to_numpy()
+	top_documents = sort_by_topic(dtm, selected_topic, cut_off)
+	documents = corpus.documents['content'][top_documents]
+
+	# step 2: parse the content of the documents and extract the unique words from each sentence
+	index = {}
+	reverse_index = {}
+	next_index = 0
+	sentence_words = []
+	for document in documents:
+		for sentence in re.split('[?!.]', document):
+			sentence = re.sub(r'[^A-Za-z0-9]+', ' ', sentence)
+			words = [word for word in sentence.lower().split(" ") 
+				if word not in corpus.stopwords]
+			words = set(words)
+			for word in words:
+				if word not in index:
+					index[word] = next_index
+					reverse_index[next_index] = word
+					next_index = next_index + 1
+			sentence_words.append(words)
+
+	# step 3: count the number of word co-occurrences
+	edge = np.zeros((len(index), len(index)))
+	for words in sentence_words:
+		for wi, wj in list(itertools.combinations(words, 2)):
+			if wi < wj:
+				edge[index[wi], index[wj]] = edge[index[wi], index[wj]] + 1
+			else:
+				edge[index[wj], index[wi]] = edge[index[wj], index[wi]] + 1
+
+	# step 4: create a word co-occurrence network
+	graph = Network("600px", "100%", notebook=True, heading='')
+	nodes = []
+	for i in range(len(index)):
+		for j in range(len(index)):
+			if edge[i, j] >= min_edges:
+				if i not in nodes:
+					nodes.append(i)
+				if j not in nodes:
+					nodes.append(j)	
+	for i in nodes:
+		graph.add_node(i, reverse_index[i], size=10)
+	for i in range(len(index)):
+		for j in range(len(index)):
+			if edge[i, j] >= min_edges:
+				graph.add_edge(i, j, value=math.sqrt(edge[i, j]), smooth=True)
+
+	return graph, [reverse_index[node] for node in nodes], top_documents
+	
+def sort_by_topic(dtm, k, cut_off=0.80):
+	col_k = [row[k] for row in dtm]
+	top_documents_index = np.argsort(-np.array(col_k))
+	return [index for index in top_documents_index 
+		if dtm[index][k] >= cut_off]
+
 # view
 
 def show_documents(corpus):
@@ -117,25 +176,51 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
+		with st.beta_expander("Help"):
+			st.markdown('''
+				We consider topics to co-occur in the same document if the weight of both 
+				topics for that document are greater than *minimum weight*. The thickness of
+				an edge in the co-occurrance graph indicates how often two topics co-occur
+				in a document (at least *minimum edges* times). Each node represents a 
+				topic. Node size reflects the total weight of the topic.
+			''')
 		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.5, value=0.1, step=0.05)
 		min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
-		st.markdown('''
-			We consider topics to co-occur in the same document if the weight of both 
-			topics for that document are greater than *minimum weight*. The thickness of
-			an edge in the co-occurrance graph indicates how often two topics co-occur
-			in a document (at least *minimum edges* times). Each node represents a 
-			topic. Node size reflects the total weight of the topic.
-		''')
 		if st.sidebar.radio("Visualization library to use", ("VisJS", "GraphViz"), index=0) == "VisJS":
 			smooth_edges = st.sidebar.checkbox("Draw with smooth edges", value=False)
 			graph_pyvis = topic_coocurrence_graph_pyvis(topic_model(corpus, number_of_topics, number_of_chunks), 
 				corpus, number_of_topics, min_weight, min_edges, smooth_edges)
-			graph_pyvis.show("graph.html")
-			components.html(open("graph.html", 'r', encoding='utf-8').read(), height=625)
+			graph_pyvis.show("topic-graph.html")
+			components.html(open("topic-graph.html", 'r', encoding='utf-8').read(), height=625)
 		else:
 			graph = topic_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), 
 				corpus, number_of_topics, min_weight, min_edges)
 			st.graphviz_chart(graph)
+
+def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
+	st.header("Keyword co-occurrences")
+	if corpus is None:
+		st.markdown("Please upload a corpus first")
+	else:
+		with st.beta_expander("Help"):
+			st.markdown('''
+				Summarize the top documents in a given topic as a graph. 
+				Its nodes are keywords in the documents (excluding language-specific, 
+				but not user-defined stopwords), and its edges indicate that two 
+				keywords appear in the same sentence. 
+				The thickness of an edge indicates how often two keywords occur 
+				together (at least *minimum edges* times). 
+			''')
+		keywords_selected_topic = st.sidebar.slider("Selected topic", 0, number_of_topics-1)
+		keywords_cut_off = st.sidebar.slider("Minium topic weight", 0.0, 1.0, value=0.8, step=0.05)
+		keywords_min_edges = st.sidebar.slider("Minimum number of edges", 1, 15, value=5)
+		graph, nodes, top_documents = keyword_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), corpus, 
+			keywords_selected_topic, keywords_min_edges, keywords_cut_off)
+		if len(nodes) == 0:
+			st.markdown("No graph. Use less restrictive criteria.")
+		else:
+			graph.show("keyword-graph.html")
+			components.html(open("keyword-graph.html", 'r', encoding='utf-8').read(), height=625)
 
 # view helpers
 
@@ -182,3 +267,6 @@ if st.sidebar.checkbox("Show document topic matrix", value=False):
 
 if st.sidebar.checkbox("Show topic co-occurrences", value=False):
 	show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks)
+
+if st.sidebar.checkbox("Show keyword co-occurrences", value=False):
+	show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks)
