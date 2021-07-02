@@ -8,6 +8,7 @@ import math
 import itertools
 import base64
 import re
+import string
 import graphviz as graphviz
 from pyvis.network import Network
 
@@ -142,6 +143,10 @@ def sort_topics(model, corpus):
 	top_topics = np.argsort(-np.array(total_topic_weights))
 	return top_topics
 
+def topic_keywords(model, selected_topic, number_of_keywords=10):
+	topic_keywords = [tw[0] for tw in model.lda.show_topic(selected_topic, number_of_keywords)]
+	return topic_keywords
+
 # view
 
 def show_documents(corpus):
@@ -236,12 +241,21 @@ def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 		graph, nodes, top_documents = keyword_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), corpus, 
 			topic, keywords_min_edges, keywords_cut_off)
 		show_topic_info(corpus, number_of_topics, number_of_chunks, topic)
+		keywords = topic_keywords(topic_model(corpus, number_of_topics, number_of_chunks), topic)
 		if len(nodes) == 0:
 			st.markdown("No graph. Use less restrictive criteria.")
 		else:
 			graph.show("keyword-graph.html")
 			components.html(open("keyword-graph.html", 'r', encoding='utf-8').read(), height=625)
-			
+			st.markdown("Top-ranked documents for this topic")
+			top_documents_df = pd.DataFrame(corpus.documents).iloc[top_documents]
+			for i, row in top_documents_df.iterrows():
+				with st.beta_expander(row["name"]):
+					document = annotated_document(corpus, row["content"], keywords)
+					st.markdown(document, unsafe_allow_html=True)
+			download_link(top_documents_df, "top-documents-{}.csv".format(topic),
+				"Download top documents")
+
 # view helpers
 
 def download_link_from_csv(csv, file_name, title="Download"):
@@ -261,6 +275,7 @@ def show_topic_info(corpus, number_of_topics, number_of_chunks, selected_topic):
 	st.markdown("  ")
 	st.markdown("Keyword co-occurrences for topic **{}** ({}) with weight **{weight:.2f}**".format(
 		selected_topic, topic_keywords, weight=total_topic_weights[selected_topic]))
+	return topic_keywords
 	
 def topic_slider(number_of_topics):
 	with st.sidebar.beta_expander("Settings"):
@@ -270,6 +285,30 @@ def topic_slider(number_of_topics):
 		else:
 			selected_topic = st.sidebar.number_input("Selected topic", 0, number_of_topics-1)		
 	return navigate_topics_by_weight, selected_topic
+
+def annotated_document(corpus, document, keywords):
+	words_and_punctuation = re.findall(r'\w+|\W+', document)
+	words = [word for word in corpus.tokenizer.tokenize([corpus.lemmatize(word) for word in corpus.tokenize(document)])]	
+	annotated_words = []
+	i = 0
+	for word in words_and_punctuation:
+		if is_punctuation(word):
+			annotated_words.append(word)
+		else:
+			if words[i] in keywords:
+				annotated_words.append("<span style=\"background-color: lightblue\">" + word + "</span>")
+			else:
+				annotated_words.append(word)
+			i = i + 1
+	return "".join(annotated_words)
+
+def is_punctuation(word):
+	if word is ' ':
+		return True
+	for s in string.punctuation:
+		if s in word:
+			return True
+	return False
 
 # controller
 
