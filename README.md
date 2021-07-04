@@ -1,6 +1,8 @@
 # Topic Model Explorer
 
-This is a tool for exploring topic models built on top of [streamlit.io](https://www.streamlit.io). There are two versions of the tool with different objectives:
+This is a tool for exploring topic models built on top of [streamlit.io](https://www.streamlit.io). It requires gensim, graphviz, pyvis, networkx, and nltk.
+
+There are two versions of the tool with different objectives:
 
 ## tme.py
 
