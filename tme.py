@@ -9,18 +9,24 @@ import itertools
 import base64
 import re
 import string
+import pickle
+from datetime import datetime
 import graphviz as graphviz
 from pyvis.network import Network
+import networkx as nx
+from networkx.algorithms.community.centrality import girvan_newman
+from networkx.algorithms.community import greedy_modularity_communities
+from networkx.algorithms.community.quality import modularity
 
 from topics import TopicModel, LDA
 
 # model
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, persist=True)
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
 
-@st.cache(hash_funcs={LDA: id})
+@st.cache(hash_funcs={LDA: id}, persist=True)
 def topic_model(corpus, number_of_topics, number_of_chunks):
 	return tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
 
@@ -61,10 +67,14 @@ def topic_coocurrence_graph_pyvis(model, corpus, number_of_topics, min_weight, m
 	dtm = document_topic_matrix(model, corpus).to_numpy()
 	keywords = ["\n" + "\n".join([tw[0] for tw in model.lda.show_topic(t, 3)])
 		for t in range(number_of_topics)]
-	graph = Network("600px", "100%", notebook=True, heading='')
+	# graph = Network("600px", "100%", notebook=True, heading='')
+	G = nx.Graph()
+
 	total_topic_weights = tally_columns(dtm, number_of_topics)
 	for i in range(number_of_topics):
-		graph.add_node(i, label=keywords[i], size=4*10*math.sqrt(total_topic_weights[i]),
+		# graph.add_node(i, label=keywords[i], size=4*10*math.sqrt(total_topic_weights[i]),
+		# 	title="Topic {}".format(i))
+		G.add_node(i, label=keywords[i], size=4*10*math.sqrt(total_topic_weights[i]),
 			title="Topic {}".format(i))
 	edge = np.zeros((number_of_topics, number_of_topics))
 	for topic_weights in dtm:
@@ -74,7 +84,21 @@ def topic_coocurrence_graph_pyvis(model, corpus, number_of_topics, min_weight, m
 	for i in range(number_of_topics):
 		for j in range(number_of_topics):
 			if edge[i, j] >= min_edges:
-				graph.add_edge(i, j, value=edge[i, j], smooth=smooth_edges)
+				# graph.add_edge(i, j, value=edge[i, j], smooth=smooth_edges)
+				G.add_edge(i, j, value=edge[i, j], smooth=smooth_edges)
+
+	# Detect communities
+	# Clauset-Newman-Moore algorithm
+	c_best = greedy_modularity_communities(G)
+	k = 0
+	for cluster in c_best:
+		for i in cluster:
+			G.nodes[i]["group"] = k
+		k = k + 1
+
+	graph = Network("600px", "100%", notebook=True, heading='')
+	graph.from_nx(G)
+
 	return graph
 
 def keyword_coocurrence_graph(model, corpus, selected_topic, min_edges, cut_off):
@@ -113,7 +137,7 @@ def keyword_coocurrence_graph(model, corpus, selected_topic, min_edges, cut_off)
 				edge[index[wj], index[wi]] = edge[index[wj], index[wi]] + 1
 
 	# step 4: create a word co-occurrence network
-	graph = Network("600px", "100%", notebook=True, heading='')
+	# graph = Network("600px", "100%", notebook=True, heading='')
 	nodes = []
 	for i in range(len(index)):
 		for j in range(len(index)):
@@ -122,12 +146,36 @@ def keyword_coocurrence_graph(model, corpus, selected_topic, min_edges, cut_off)
 					nodes.append(i)
 				if j not in nodes:
 					nodes.append(j)	
+
+	G = nx.Graph()
 	for i in nodes:
-		graph.add_node(i, reverse_index[i], size=10)
+		# graph.add_node(i, reverse_index[i], size=10)
+		G.add_node(i, label=reverse_index[i], size=10)
 	for i in range(len(index)):
 		for j in range(len(index)):
 			if edge[i, j] >= min_edges:
-				graph.add_edge(i, j, value=math.sqrt(edge[i, j]), smooth=True)
+				# graph.add_edge(i, j, value=math.sqrt(edge[i, j]), smooth=True)
+				G.add_edge(i, j, value=math.sqrt(edge[i, j]), smooth=True)
+
+
+	# step 5: detect communities
+
+	# communities = girvan_newman(G)
+	# communities_by_quality = [(c, modularity(G, c)) for c in communities]
+	# c_best = sorted([(c, m) for c, m in communities_by_quality], key=lambda x: x[1], reverse=True)
+	# c_best = c_best[0][0]
+
+	# Clauset-Newman-Moore algorithm
+	if len(nodes) > 0:
+		c_best = greedy_modularity_communities(G)
+		k = 0
+		for cluster in c_best:
+			for i in cluster:
+				G.nodes[i]["group"] = k
+			k = k + 1
+
+	graph = Network("600px", "100%", notebook=True, heading='')
+	graph.from_nx(G)
 
 	return graph, [reverse_index[node] for node in nodes], top_documents
 	
@@ -170,6 +218,12 @@ def show_topics(corpus, number_of_topics, number_of_chunks=100):
 		st.table(topics_df)
 		download_link(topics_df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
+		with st.beta_expander("More"):
+			if st.button("Save a snapshot of the topic model"):
+				now = datetime.now()
+				unique_extension = now.strftime("%Y-%m-%d-%H-%M-%S") + ".pickle"
+				lda_model = topic_model(corpus, number_of_topics, number_of_chunks).lda
+				pickle.dump(lda_model, open("models/tm-" + unique_extension, "wb"))
 
 def show_document_topic_matrix(corpus, number_of_topics, number_of_chunks=100):
 	st.header("Document topic matrix")
@@ -255,6 +309,27 @@ def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 					st.markdown(document, unsafe_allow_html=True)
 			download_link(top_documents_df, "top-documents-{}.csv".format(topic),
 				"Download top documents")
+
+def show_topic_trends(corpus, number_of_topics, number_of_chunks):
+	st.header("Topic trends")
+	if corpus is None:
+		st.markdown("Please upload a corpus first")
+	else:
+		with st.beta_expander("Help"):
+			st.markdown('''
+				This chart shows emerging topic trends. It plots the aggregated topic weights 
+				and the contribution of each topic by year. Note: The corpus must have a *year*
+				column. 
+			''')
+		dtm_df = document_topic_matrix(topic_model(corpus, number_of_topics, number_of_chunks), corpus)
+		if "year" in corpus.documents:
+			dtm_df.insert(0, "year", [str(year) for year in corpus.documents["year"]])
+			dtm_df_sum = dtm_df.groupby("year").sum()
+			st.bar_chart(dtm_df_sum)
+			dtm_df_sum_year = dtm_df_sum.copy()
+			dtm_df_sum_year.insert(0, "year", sorted(dtm_df["year"].unique()))
+			download_link(dtm_df_sum_year, "topic-trends-{}.csv".format(number_of_topics),
+				"Download topic trends")
 
 # view helpers
 
@@ -347,3 +422,8 @@ if st.sidebar.checkbox("Show topic co-occurrences", value=False):
 
 if st.sidebar.checkbox("Show keyword co-occurrences", value=False):
 	show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks)
+
+if st.sidebar.checkbox("Show topic trends", value=False):
+	show_topic_trends(corpus, number_of_topics, number_of_chunks)
+
+
