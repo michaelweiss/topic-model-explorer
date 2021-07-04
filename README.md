@@ -1,6 +1,6 @@
 # Topic Model Explorer
 
-This is a tool for exploring topic models built on top of [streamlit.io](https://www.streamlit.io). TThere are two versions of the tool:
+This is a tool for exploring topic models built on top of [streamlit.io](https://www.streamlit.io). There are two versions of the tool with different objectives:
 
 ## tme.py
 
