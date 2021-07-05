@@ -307,6 +307,9 @@ def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 				with st.beta_expander(row["name"]):
 					document = annotated_document(corpus, row["content"], keywords)
 					st.markdown(document, unsafe_allow_html=True)
+					# document = annotated_document_topics(corpus, row["content"], 
+					# 	topic_model(corpus, number_of_topics, number_of_chunks))
+					# st.markdown(document, unsafe_allow_html=True)
 			download_link(top_documents_df, "top-documents-{}.csv".format(topic),
 				"Download top documents")
 
@@ -378,12 +381,59 @@ def annotated_document(corpus, document, keywords):
 	return "".join(annotated_words)
 
 def is_punctuation(word):
-	if word is ' ':
+	if word == ' ':
 		return True
 	for s in string.punctuation:
 		if s in word:
 			return True
 	return False
+
+annotation_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728',
+	'#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+
+def annotated_document_topics(corpus, document, topic_model):
+	words_and_punctuation = re.findall(r'\w+|\W+', document)
+	words = [word for word in corpus.tokenizer.tokenize([corpus.lemmatize(word) for word in corpus.tokenize(document)])]	
+	bow = corpus.dictionary.doc2bow(words)
+	doc_topics, word_topics, phi_values = topic_model.lda.get_document_topics(bow, per_word_topics=True)
+	word2topic = {}
+	keywords = []
+	for word, topics in word_topics:
+		word2topic[corpus.dictionary.id2token[word]] = topics[0]
+		keywords.append(corpus.dictionary.id2token[word])
+	st.write(word2topic)
+	# st.write(keywords)
+	annotated_words = []
+	i = 0
+	# st.write(words_and_punctuation)
+	for word in words_and_punctuation:
+		if is_punctuation(word):
+			annotated_words.append(word)
+		else:
+			if words[i] in keywords:
+				try:
+					annotated_words.append("<span style=\"background-color: {}\">".format(annotation_colors[word2topic[words[i]]]) + 
+						word + "</span>")
+				except:
+					annotated_words.append("<span><u>" + word + "</u></span>")
+			else:
+				annotated_words.append(word)
+			i = i + 1
+	return "".join(annotated_words)
+
+	# annotated_words = []
+	# i = 0
+	# for word in words_and_punctuation:
+	# 	if is_punctuation(word):
+	# 		annotated_words.append(word)
+	# 	else:
+	# 		annotated_words.append(word)
+	# 		if words[i] in keywords:
+	# 			annotated_words.append("<span style=\"background-color: lightblue\">" + word + "</span>")
+	# 		else:
+	# 			annotated_words.append(word)
+	# 		i = i + 1
+	# return annotated_words
 
 # controller
 

@@ -158,6 +158,14 @@ class LDA:
 			topics_full[topic] = score
 		return topics_full
 
+	def get_term_topics(self, word):
+		return self.lda.get_term_topics(word)
+
+	def get_document_topics(self, bow):
+		doc_topics, word_topics, phi_values = self.lda.get_document_topics(bow, per_word_topics=True)
+		st.write("get_document_topics", word_topics)
+		return doc_topics, words_topics
+
 class TopicAlignment:
 	def __init__(self, topic_model, corpus, number_of_topics, number_of_chunks, number_of_runs):
 		self.topic_model = topic_model
