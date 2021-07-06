@@ -6,6 +6,8 @@ There are two versions of the tool with different objectives:
 
 ## tme.py
 
+![](doc/topic-co-occurrence-network.png)
+
 Supports the workflow to create topic co-occurrence networks and keyword co-occurrence networks. To use this tool, run:
 
 ```
