@@ -14,7 +14,7 @@ Supports the workflow to create topic co-occurrence networks and keyword co-occu
 streamlit run tme.py
 ```
 
-To learn more about the approach behind the tool you can watch the video of my talk at the [Networks 2021](https://www.youtube.com/watch?v=KeScI6S7aag) conference.
+To learn more about the approach behind the tool you can watch the video of my talk on [Exploratory literature reviews using topic modeling](https://www.youtube.com/watch?v=KeScI6S7aag) Networks 2021 conference.
 
 ## tme-s.py 
 
