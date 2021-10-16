@@ -107,10 +107,11 @@ def keyword_coocurrence_graph(model, corpus, selected_topic, min_edges, cut_off)
 	top_documents = sort_by_topic(dtm, selected_topic, cut_off)
 	documents = corpus.documents['content'][top_documents]
 
-	# step 2: parse the content of the documents and extract the unique words from each sentence
+	# step 2a: parse the content of the documents and extract the unique words from each sentence
 	index = {}
 	reverse_index = {}
 	next_index = 0
+	# TODO: why is this called sentence words? are these not all words in the document?
 	sentence_words = []
 	for document in documents:
 		for sentence in re.split('[?!.]', document):
@@ -127,7 +128,11 @@ def keyword_coocurrence_graph(model, corpus, selected_topic, min_edges, cut_off)
 					next_index = next_index + 1
 			sentence_words.append(words)
 
+	# step 2b: filter out low-frequency keywords
+
 	# step 3: count the number of word co-occurrences
+	# TODO: only count sentence-level co-occurrences ... this seems to count co-occurrences
+	# at the document level, unless I am mistaken
 	edge = np.zeros((len(index), len(index)))
 	for words in sentence_words:
 		for wi, wj in list(itertools.combinations(words, 2)):

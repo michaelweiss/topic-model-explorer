@@ -1,0 +1,108 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.css" type="text/css" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis-network.min.js"> </script>
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+
+<style type="text/css">
+
+        #mynetwork {
+            width: 100%;
+            height: 600px;
+            background-color: #ffffff;
+            border: 1px solid lightgray;
+            position: relative;
+            float: left;
+        }
+
+        
+
+        
+
+        
+</style>
+
+</head>
+
+<body>
+<div id = "mynetwork"></div>
+
+
+<script type="text/javascript">
+
+    // initialize global variables.
+    var edges;
+    var nodes;
+    var network; 
+    var container;
+    var options, data;
+
+    
+    // This method is responsible for drawing the graph, returns the drawn network
+    function drawGraph() {
+        var container = document.getElementById('mynetwork');
+        
+        
+
+        // parsing and collecting nodes and edges from the python
+        nodes = new vis.DataSet([{"id": 0, "label": "\ninvestor\nproposition\nresource", "shape": "dot", "size": 15.311275356040557, "title": "Topic 0"}, {"id": 1, "label": "\nresource\nscale\nowner", "shape": "dot", "size": 9.505254708815512, "title": "Topic 1"}, {"id": 2, "label": "\ncompany\nproposition\ncustomer", "shape": "dot", "size": 11.986844026569955, "title": "Topic 2"}, {"id": 3, "label": "\nresource\ncompany\nscaling", "shape": "dot", "size": 13.302939825367005, "title": "Topic 3"}, {"id": 4, "label": "\ncompany\nproduct\nservice", "shape": "dot", "size": 12.836394622567067, "title": "Topic 4"}, {"id": 5, "label": "\ncustomer\ncompany\nscale", "shape": "dot", "size": 12.020303037010038, "title": "Topic 5"}, {"id": 6, "label": "\ncompany\nresource\nservice", "shape": "dot", "size": 15.110885749319976, "title": "Topic 6"}, {"id": 7, "label": "\ncompany\nscale\nchain", "shape": "dot", "size": 9.102659335200743, "title": "Topic 7"}, {"id": 8, "label": "\nproduct\ncustomer\napply", "shape": "dot", "size": 12.386544596487415, "title": "Topic 8"}, {"id": 9, "label": "\ncompany\ncustomer\nproduct", "shape": "dot", "size": 11.59695176899044, "title": "Topic 9"}]);
+        edges = new vis.DataSet([{"from": 0, "smooth": false, "to": 1, "value": 1.0}, {"from": 0, "smooth": false, "to": 3, "value": 1.0}, {"from": 0, "smooth": false, "to": 7, "value": 1.0}, {"from": 3, "smooth": false, "to": 4, "value": 1.0}, {"from": 3, "smooth": false, "to": 6, "value": 1.0}, {"from": 3, "smooth": false, "to": 8, "value": 1.0}]);
+
+        // adding nodes and edges to the graph
+        data = {nodes: nodes, edges: edges};
+
+        var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": false,
+            "type": "continuous"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+        
+        
+
+        
+
+        network = new vis.Network(container, data, options);
+	 
+        
+
+
+        
+
+        return network;
+
+    }
+
+    drawGraph();
+
+</script>
+</body>
+</html>
