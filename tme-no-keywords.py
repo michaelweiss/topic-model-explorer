@@ -275,6 +275,25 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 				corpus, number_of_topics, min_weight, min_edges)
 			with graph_container.container():
 				st.graphviz_chart(graph)
+		with st.expander("Topic sentences"):
+			show_topic_sentences(corpus, number_of_topics, number_of_chunks, min_weight)
+
+def show_topic_sentences(corpus, number_of_topics, number_of_chunks=100, min_weight=0.1):
+	if corpus is None:
+		st.markdown("Please upload a corpus first")
+	else:
+		topic_sentences = ""
+		dtm_df = document_topic_matrix(topic_model(corpus, number_of_topics, number_of_chunks), corpus)
+		for weights in dtm_df.to_numpy():
+			t = 0
+			sentence = ""
+			for w in weights:
+				if w > min_weight:
+					sentence += "T{} ".format(t)
+				t = t + 1
+			sentence += ". "
+			topic_sentences += sentence
+		download_link_from_string(topic_sentences, "topic-sentences-{}.txt".format(number_of_topics), "Download topic sentences")
 
 def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 	st.header("Keyword co-occurrences")
@@ -365,6 +384,10 @@ def show_topic_trends(corpus, number_of_topics, number_of_chunks):
 def download_link_from_csv(csv, file_name, title="Download"):
 	b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
 	href = "<a href='data:file/csv;base64,{}' download='{}'>{}</a>".format(b64, file_name, title)
+	st.markdown(href, unsafe_allow_html=True)
+
+def download_link_from_string(s, file_name, title="Download"):
+	href = "<a href='data:file/txt,{}' download='{}'>{}</a>".format(s, file_name, title)
 	st.markdown(href, unsafe_allow_html=True)
 
 def download_link(dataframe, file_name, title="Download"):
