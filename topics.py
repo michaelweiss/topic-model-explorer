@@ -158,6 +158,20 @@ class LDA:
 			topics_full[topic] = score
 		return topics_full
 
+	def topic_co_occurrence_matrix(self, dtm, min_weight=0.1):
+		return [[t for t, w in topics if w >= min_weight] for topics in dtm]
+
+	def tcom_to_sentences(self, tcom):
+		for tco in tcom:
+			tco = ["T{}".format(t) for t in tco]
+			tco.append('.')
+			return " ".join(tco)
+
+	def topic_sentences(self, corpus, min_weight=0.1):
+		dtm = [self.get_document_topics(bow) for bow in corpus.bow()]
+		tcom = self.topic_co_occurrence_matrix(dtm, min_weight)
+		return self.tcom_to_sentences(tcom)
+
 class TopicAlignment:
 	def __init__(self, topic_model, corpus, number_of_topics, number_of_chunks, number_of_runs):
 		self.topic_model = topic_model
