@@ -14,6 +14,9 @@ import math
 
 # model
 
+# Added a random seed for reproducibility (if unchecked, no seed will be used)
+random_seed = None
+
 @st.cache(allow_output_mutation=True)
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
@@ -26,7 +29,7 @@ def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_r
 	progress_bar = st.progress(0)
 	def progress_update(run):
 		progress_bar.progress(math.ceil(100 * (run + 1)/number_of_runs))
-	alignment = TopicAlignment(tm, corpus, number_of_topics, number_of_chunks, number_of_runs)
+	alignment = TopicAlignment(tm, corpus, number_of_topics, number_of_chunks, number_of_runs, random_seed=random_seed)
 	alignment.fit(progress_update)
 	hide_status_indicators(status, progress_bar)
 	return alignment
@@ -55,9 +58,11 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
-		selected_topic = st.sidebar.selectbox("Select topic to highlight", range(number_of_topics), 0)
+		selected_topic = st.sidebar.number_input("Select topic to highlight", 
+			min_value=0, max_value=number_of_topics-1, value=0)
 		alignment = find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs)
-		if st.sidebar.checkbox("Show all topics", value=True):
+		if st.sidebar.checkbox("Show all topics", 
+			help="Uncheck to show the highlighted topic", value=True):
 			"""
 			This table gives an overview of the topics in each run.
 
@@ -125,6 +130,7 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			selected_documents = documents_to_show.index.tolist()
 			documents_to_show["name"] = corpus.documents["name"][selected_documents]
 			documents_to_show["content"] = corpus.documents["content"][selected_documents]
+			documents_to_show["type"] = corpus.documents["type"][selected_documents]
 			st.dataframe(documents_to_show)
 			download_link_from_csv(documents_to_show.to_csv(index=False),
 				"tm-{}-{}-documents.csv".format(number_of_topics, selected_topic),
@@ -232,7 +238,7 @@ def download_link_from_html(html, file_name, title="Download"):
 
 def app(tm):
 	st.sidebar.title("Topic Model Explorer")
-	url = st.sidebar.file_uploader("Corpus", type="csv", encoding="utf-8")
+	url = st.sidebar.file_uploader("Corpus", type="csv")
 	stopwords = st.sidebar.text_area("Stopwords (one per line)")
 	multiwords = st.sidebar.text_area("Multiwords (one per line)")
 	corpus = load_corpus(url, stopwords, multiwords)
@@ -243,6 +249,8 @@ def app(tm):
 	# with Orange and to examine the impact of this parameter.
 	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
 	number_of_runs = st.sidebar.slider("Number of runs", 1, 10, 4)
+	# if st.sidebar.checkbox("Use random seed (for reproducibility)", value=True):
+	# 	random_seed = st.sidebar.number_input("Random seed", value=42)
 	if st.sidebar.checkbox("Show topic model runs", value=False):
 		show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_runs)
 

@@ -101,11 +101,12 @@ class TopicModel:
 			return None
 
 	def fit(self, corpus, number_of_topics, number_of_iterations=50, number_of_passes=1,
-			number_of_chunks=1, alpha="symmetric"):
+			number_of_chunks=1, random_seed=None, alpha="symmetric"):
 		if alpha == "talley":
 			alpha = np.array([self.alpha(corpus, number_of_topics)] * number_of_topics)
+		# Added random_state for reproducibility (the default is to choose a random seed)
 		return LDA(models.LdaModel(corpus.bow(), number_of_topics, corpus.dictionary,
-			iterations=number_of_iterations, passes=number_of_passes, 
+			iterations=number_of_iterations, passes=number_of_passes, random_state=random_seed,
 			chunksize=self.chunksize(corpus, number_of_chunks), alpha=alpha))
 
 	def alpha(self, corpus, number_of_topics):
@@ -173,12 +174,13 @@ class LDA:
 		return self.tcom_to_sentences(tcom)
 
 class TopicAlignment:
-	def __init__(self, topic_model, corpus, number_of_topics, number_of_chunks, number_of_runs):
+	def __init__(self, topic_model, corpus, number_of_topics, number_of_chunks, number_of_runs, random_seed=None):
 		self.topic_model = topic_model
 		self.corpus = corpus
 		self.number_of_topics = number_of_topics
 		self.number_of_chunks = number_of_chunks
 		self.number_of_runs = number_of_runs
+		self.random_seed = random_seed
 
 	def fit(self, progress_update):
 		# experimental: remember the computed LDA models
@@ -199,7 +201,7 @@ class TopicAlignment:
 		lda_models = []
 		for run in range(self.number_of_runs):
 			lda_models.append(self.topic_model.fit(self.corpus, self.number_of_topics, 
-				number_of_chunks=self.number_of_chunks))
+				number_of_chunks=self.number_of_chunks, random_seed=self.random_seed))
 			progress_update(run)
 		return lda_models
 
@@ -242,7 +244,7 @@ class TopicAlignment:
 		return keywords, weights
 
 	def documents(self, lda_models):
-		dtm = [lda_models[i].document_topics_matrix(self.corpus)
+		dtm = [lda_models[i].document_topic_matrix(self.corpus)
 			for i in range(self.number_of_runs)]
 		documents = []
 		for topic in range(self.number_of_topics):
