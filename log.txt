@@ -1,0 +1,294 @@
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8502
+  Network URL: http://10.10.10.33:8502
+
+  For better performance, install the Watchdog module:
+
+  $ xcode-select --install
+  $ pip install watchdog
+            
+>>> init: set is_dirty to true
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> find topic alignment: set dirty to false
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 4
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 5
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 4
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 4
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 5
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 4
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update_number_of_runs: set is_dirty to true
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> find topic alignment: set dirty to false
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update_number_of_runs: set is_dirty to true
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> find topic alignment: set dirty to false
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 4
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update_number_of_topics: set is_dirty to true
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update_number_of_topics: set is_dirty to true
+>>> update selected topic: 0
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update_number_of_topics: set is_dirty to true
+>>> update selected topic: 0
+>>> update selected topic: 0
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> find topic alignment: set dirty to false
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 4
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+>>> update stopwords: set is_dirty to true
+>>> update update_multiwords: set is_dirty to true
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update_number_of_topics: set is_dirty to true
+>>> update_number_of_chunks: set is_dirty to true
+>>> update_number_of_runs: set is_dirty to true
+>>> update selected topic: 4
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> find topic alignment: set dirty to false
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 0
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 0
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 0
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 0
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=Claims.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+>>> update stopwords: set is_dirty to true
+>>> update update_multiwords: set is_dirty to true
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update_number_of_topics: set is_dirty to true
+>>> update_number_of_chunks: set is_dirty to true
+>>> update_number_of_runs: set is_dirty to true
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = True
+>>> find topic alignment: recompute topic model
+>>> find topic alignment: set dirty to false
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 3
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 2
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+>>> update file: set is_dirty to true
+file=assertions.csv
+>>> update selected topic: 1
+>>> find topic alignment: check is_dirty = False
+>>> find topic alignment: return existing topic model
+  Stopping...

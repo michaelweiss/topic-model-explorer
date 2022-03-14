@@ -17,24 +17,70 @@ import math
 # Added a random seed for reproducibility (if unchecked, no seed will be used)
 random_seed = None
 
-@st.cache(allow_output_mutation=True)
-def load_corpus(url, stopwords, multiwords):
-	return tm.load_corpus(url, stopwords, multiwords)
+# Keep track whether the topic model needs to be updated
+if 'is_dirty_alignment' not in st.session_state:
+	print(">>> init: set is_dirty to true")
+	st.session_state.is_dirty_alignment = True
 
+# Keep track of current corpus file
+if 'file' not in st.session_state:
+	print(">>> init: set file to None")
+	st.session_state.file = None
+
+@st.cache(allow_output_mutation=True)
+def load_corpus(file, stopwords, multiwords):
+	return tm.load_corpus(file, stopwords, multiwords)
+
+# instead of caching use dirty flag to recompute topic model as necessary
 # @st.cache(suppress_st_warning=True)
-@st.cache(suppress_st_warning=True, allow_output_mutation=True)
+# @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 # @st.cache(hash_funcs = { TopicAlignment: id })
 def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs):
+	print(">>> find topic alignment: check is_dirty = {}".format(st.session_state.is_dirty_alignment))
+	if not st.session_state.is_dirty_alignment:
+		print(">>> find topic alignment: return existing topic model")
+		return st.session_state.alignment
+	print(">>> find topic alignment: recompute topic model")
 	status = st.markdown("Fitting topic models:")
 	progress_bar = st.progress(0)
 	def progress_update(run):
 		progress_bar.progress(math.ceil(100 * (run + 1)/number_of_runs))
-	alignment = TopicAlignment(tm, corpus, number_of_topics, number_of_chunks, number_of_runs, random_seed=random_seed)
-	alignment.fit(progress_update)
+	st.session_state.alignment = TopicAlignment(tm, corpus, number_of_topics, number_of_chunks, number_of_runs, random_seed=random_seed)
+	st.session_state.alignment.fit(progress_update)
 	hide_status_indicators(status, progress_bar)
-	return alignment
+	print(">>> find topic alignment: set dirty to false")
+	st.session_state.is_dirty_alignment = False
+	return st.session_state.alignment
 
 # model helpers
+
+def update_file():
+	print(">>> update file: set is_dirty to true")
+	print("new_file={}".format(st.session_state.new_file.name))
+	# st.session_state.is_dirty_alignment = True
+
+def update_stopwords():
+	print(">>> update stopwords: set is_dirty to true")
+	st.session_state.is_dirty_alignment = True
+
+def update_multiwords():
+	print(">>> update update_multiwords: set is_dirty to true")
+	st.session_state.is_dirty_alignment = True
+
+def update_number_of_topics():
+	print(">>> update_number_of_topics: set is_dirty to true")
+	st.session_state.is_dirty_alignment = True
+
+def update_number_of_chunks():
+	print(">>> update_number_of_chunks: set is_dirty to true")
+	st.session_state.is_dirty_alignment = True
+
+def update_number_of_runs():
+	print(">>> update_number_of_runs: set is_dirty to true")
+	st.session_state.is_dirty_alignment = True
+
+def update_selected_topic():
+	print(">>> update selected topic: {}".format(st.session_state.selected_topic))
 
 # view
 
@@ -59,7 +105,7 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 		st.markdown("Please upload a corpus first")
 	else:
 		selected_topic = st.sidebar.number_input("Select topic to highlight", 
-			min_value=0, max_value=number_of_topics-1, value=0)
+			min_value=0, max_value=number_of_topics-1, value=0, key="selected_topic", on_change=update_selected_topic)
 		alignment = find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs)
 		if st.sidebar.checkbox("Show all topics", 
 			help="Uncheck to show the highlighted topic", value=True):
@@ -238,17 +284,17 @@ def download_link_from_html(html, file_name, title="Download"):
 
 def app(tm):
 	st.sidebar.title("Topic Model Explorer")
-	url = st.sidebar.file_uploader("Corpus", type="csv")
-	stopwords = st.sidebar.text_area("Stopwords (one per line)")
-	multiwords = st.sidebar.text_area("Multiwords (one per line)")
-	corpus = load_corpus(url, stopwords, multiwords)
+	file = st.sidebar.file_uploader("Corpus", type="csv", key="new_file", on_change=update_file)
+	stopwords = st.sidebar.text_area("Stopwords (one per line)", on_change=update_stopwords)
+	multiwords = st.sidebar.text_area("Multiwords (one per line)", on_change=update_multiwords)
+	corpus = load_corpus(file, stopwords, multiwords)
 	if st.sidebar.checkbox("Show documents"):
 		show_documents(corpus)
-	number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10)
+	number_of_topics = st.sidebar.slider("Number of topics", 1, 50, 10, on_change=update_number_of_topics)
 	# Default should be 1. 100 is the value used by Orange. We include this option for compatibility 
 	# with Orange and to examine the impact of this parameter.
-	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100)
-	number_of_runs = st.sidebar.slider("Number of runs", 1, 10, 4)
+	number_of_chunks = st.sidebar.slider("Number of chunks", 1, 100, 100, on_change=update_number_of_chunks)
+	number_of_runs = st.sidebar.slider("Number of runs", 1, 10, 4, on_change=update_number_of_runs)
 	# if st.sidebar.checkbox("Use random seed (for reproducibility)", value=True):
 	# 	random_seed = st.sidebar.number_input("Random seed", value=42)
 	if st.sidebar.checkbox("Show topic model runs", value=False):
