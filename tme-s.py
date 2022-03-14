@@ -23,9 +23,9 @@ if 'is_dirty_alignment' not in st.session_state:
 	st.session_state.is_dirty_alignment = True
 
 # Keep track of current corpus file
-if 'file' not in st.session_state:
-	print(">>> init: set file to None")
-	st.session_state.file = None
+if 'file_name' not in st.session_state:
+	print(">>> init: set file_name to None")
+	st.session_state.file_name = None
 
 @st.cache(allow_output_mutation=True)
 def load_corpus(file, stopwords, multiwords):
@@ -55,9 +55,11 @@ def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_r
 # model helpers
 
 def update_file():
-	print(">>> update file: set is_dirty to true")
 	print("new_file={}".format(st.session_state.new_file.name))
-	# st.session_state.is_dirty_alignment = True
+	if st.session_state.new_file.name is not st.session_state.file_name:
+		print(">>> update file: set is_dirty to true")
+		st.session_state.is_dirty_alignment = True
+		st.session_state.file_name = st.session_state.new_file.name
 
 def update_stopwords():
 	print(">>> update stopwords: set is_dirty to true")
@@ -176,7 +178,8 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 			selected_documents = documents_to_show.index.tolist()
 			documents_to_show["name"] = corpus.documents["name"][selected_documents]
 			documents_to_show["content"] = corpus.documents["content"][selected_documents]
-			documents_to_show["type"] = corpus.documents["type"][selected_documents]
+			if "type" in corpus.documents:
+				documents_to_show["type"] = corpus.documents["type"][selected_documents]
 			st.dataframe(documents_to_show)
 			download_link_from_csv(documents_to_show.to_csv(index=False),
 				"tm-{}-{}-documents.csv".format(number_of_topics, selected_topic),
