@@ -223,7 +223,7 @@ def show_topics(corpus, number_of_topics, number_of_chunks=100):
 		st.table(topics_df)
 		download_link(topics_df, "topic-keywords-{}.csv".format(number_of_topics),
 			"Download topic keywords")
-		with st.beta_expander("More"):
+		with st.expander("More"):
 			if st.button("Save a snapshot of the topic model"):
 				now = datetime.now()
 				unique_extension = now.strftime("%Y-%m-%d-%H-%M-%S") + ".pickle"
@@ -249,7 +249,7 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
-		with st.beta_expander("Help"):
+		with st.expander("Help"):
 			st.markdown('''
 				We consider topics to co-occur in the same document if the weight of both 
 				topics for that document are greater than *minimum weight*. The thickness of
@@ -260,7 +260,7 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 		min_weight = st.sidebar.slider("Minimum weight", 0.0, 0.5, value=0.1, step=0.05)
 		min_edges = st.sidebar.slider("Minimum number of edges", 1, 10, value=1)
 		graph_container = st.empty()
-		with st.beta_expander("Settings"):
+		with st.expander("Settings"):
 			library_to_use = st.radio("Visualization library to use", ("VisJS", "GraphViz"), index=0)
 			if library_to_use == "VisJS":
 				smooth_edges = st.checkbox("Draw with smooth edges", value=False)
@@ -268,12 +268,12 @@ def show_topic_co_occurrences(corpus, number_of_topics, number_of_chunks=100):
 			graph_pyvis = topic_coocurrence_graph_pyvis(topic_model(corpus, number_of_topics, number_of_chunks), 
 				corpus, number_of_topics, min_weight, min_edges, smooth_edges)
 			graph_pyvis.show("topic-graph.html")
-			with graph_container.beta_container():
+			with graph_container.container():
 				components.html(open("topic-graph.html", 'r', encoding='utf-8').read(), height=625)
 		else:
 			graph = topic_coocurrence_graph(topic_model(corpus, number_of_topics, number_of_chunks), 
 				corpus, number_of_topics, min_weight, min_edges)
-			with graph_container.beta_container():
+			with graph_container.container():
 				st.graphviz_chart(graph)
 
 def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
@@ -281,7 +281,7 @@ def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
-		with st.beta_expander("Help"):
+		with st.expander("Help"):
 			st.markdown('''
 				Summarize the top documents in a given topic as a graph. 
 				Its nodes are keywords in the documents (excluding language-specific, 
@@ -310,7 +310,7 @@ def show_keyword_co_coccurrences(corpus, number_of_topics, number_of_chunks):
 			st.markdown("Top-ranked documents for this topic")
 			top_documents_df = pd.DataFrame(corpus.documents).iloc[top_documents]
 			for i, row in top_documents_df.iterrows():
-				with st.beta_expander(str(row["name"])):
+				with st.expander(str(row["name"])):
 					document = annotated_document(corpus, row["content"], keywords)
 					st.markdown(document, unsafe_allow_html=True)
 			download_link(top_documents_df, "top-documents-{}.csv".format(topic),
@@ -321,7 +321,7 @@ def show_topic_trends(corpus, number_of_topics, number_of_chunks):
 	if corpus is None:
 		st.markdown("Please upload a corpus first")
 	else:
-		with st.beta_expander("Help"):
+		with st.expander("Help"):
 			st.markdown('''
 				This chart shows emerging topic trends. It plots the aggregated topic weights 
 				and the contribution of each topic by year. Note: The corpus must have a *year*
@@ -359,7 +359,7 @@ def show_topic_info(corpus, number_of_topics, number_of_chunks, selected_topic):
 	return topic_keywords
 	
 def topic_slider(number_of_topics):
-	with st.sidebar.beta_expander("Settings"):
+	with st.sidebar.expander("Settings"):
 		navigate_topics_by_weight = st.checkbox("Navigate topics by order of weight", value=True)
 		if navigate_topics_by_weight:
 			selected_topic = st.sidebar.number_input("Show n-th largest topic", 0, number_of_topics-1)

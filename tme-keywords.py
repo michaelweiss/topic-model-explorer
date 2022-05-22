@@ -347,13 +347,13 @@ def show_documents_associated_with_topic(corpus, number_of_topics, number_of_chu
 			topic_order = sort_topics(model, corpus)
 			selected_topic = topic_order[selected_topic]
 		show_topic_info(corpus, number_of_topics, number_of_chunks, selected_topic)
-		keywords = topic_keywords(model, selected_topic)
+		keywords = topic_keywords(model, selected_topic, number_of_keywords=25)
 		dtm = document_topic_matrix(model, corpus).to_numpy()
 		top_documents = sort_by_topic(dtm, selected_topic, min_topic_weight)
 		top_documents_df = pd.DataFrame(corpus.documents).iloc[top_documents]
 		for i, row in top_documents_df.iterrows():
 			with st.expander(str(row["name"])):
-				document = annotated_document(corpus, row["content"], keywords)
+				document = annotated_document_v2(corpus, row["content"], keywords)
 				st.markdown(document, unsafe_allow_html=True)
 		download_link(top_documents_df, "top-documents-{}.csv".format(selected_topic),
 			"Download top documents")
@@ -414,20 +414,35 @@ def topic_slider(number_of_topics):
 	return navigate_topics_by_weight, selected_topic
 
 def annotated_document(corpus, document, keywords):
+	for keyword in keywords:
+		document = document.replace(keyword, "<u>{}</u>".format(keyword))
+	return document
+
+def annotated_document_v2(corpus, document, keywords):
+	def annotate_word(word):
+		if word in keywords:
+			return "<span style='background-color: lightblue'>{}</span>".format(word)
+		else:
+			return word
 	words_and_punctuation = re.findall(r'\w+|\W+', document)
 	words = [word for word in corpus.tokenizer.tokenize([corpus.lemmatize(word) for word in corpus.tokenize(document)])]	
-	annotated_words = []
-	i = 0
-	for word in words_and_punctuation:
-		if is_punctuation(word):
-			annotated_words.append(word)
-		else:
-			if words[i] in keywords:
-				annotated_words.append("<span style=\"background-color: lightblue\">" + word + "</span>")
-			else:
-				annotated_words.append(word)
-			i = i + 1
-	return "".join(annotated_words)
+	words = [annotate_word(word) for word in words]
+	return " ".join(words)
+	# return " ".join([word if word in keywords else words_and_punctuation[i] for i, word in enumerate(words)])
+	# annotated_words = []
+	# i = 0
+	# for word in words_and_punctuation:
+	# 	if is_punctuation(word):
+	# 		annotated_words.append(word)
+	# 		i = i + 1
+	# 	else:
+	# 		if words[i] in keywords:
+	# 			annotated_words.append("<u>" + word + "</u>")
+	# 			i = i + len(words[i].split('_'))
+	# 		else:
+	# 			annotated_words.append(word)
+	# 			i = i + 1
+	# return "".join(annotated_words)
 
 def is_punctuation(word):
 	if word == ' ':
