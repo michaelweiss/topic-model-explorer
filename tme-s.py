@@ -12,22 +12,28 @@ from gensim import utils
 
 import math
 
+DEBUG = False
+
 # model
 
 # Added a random seed for reproducibility (if unchecked, no seed will be used)
 random_seed = None
 
+def print_debug(message):
+	if DEBUG:
+		print(message)
+
 # Keep track whether the topic model needs to be updated
 if 'is_dirty_alignment' not in st.session_state:
-	print(">>> init: set is_dirty to true")
+	print_debug(">>> init: set is_dirty to true")
 	st.session_state.is_dirty_alignment = True
 
 # Keep track of current corpus file
 if 'file_name' not in st.session_state:
-	print(">>> init: set file_name to None")
+	print_debug(">>> init: set file_name to None")
 	st.session_state.file_name = None
 
-@st.cache(allow_output_mutation=True)
+@st.cache_data
 def load_corpus(file, stopwords, multiwords):
 	return tm.load_corpus(file, stopwords, multiwords)
 
@@ -36,11 +42,11 @@ def load_corpus(file, stopwords, multiwords):
 # @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 # @st.cache(hash_funcs = { TopicAlignment: id })
 def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_runs):
-	print(">>> find topic alignment: check is_dirty = {}".format(st.session_state.is_dirty_alignment))
+	print_debug(">>> find topic alignment: check is_dirty = {}".format(st.session_state.is_dirty_alignment))
 	if not st.session_state.is_dirty_alignment:
-		print(">>> find topic alignment: return existing topic model")
+		print_debug(">>> find topic alignment: return existing topic model")
 		return st.session_state.alignment
-	print(">>> find topic alignment: recompute topic model")
+	print_debug(">>> find topic alignment: recompute topic model")
 	status = st.markdown("Fitting topic models:")
 	progress_bar = st.progress(0)
 	def progress_update(run):
@@ -48,41 +54,41 @@ def find_topic_alignment(corpus, number_of_topics, number_of_chunks, number_of_r
 	st.session_state.alignment = TopicAlignment(tm, corpus, number_of_topics, number_of_chunks, number_of_runs, random_seed=random_seed)
 	st.session_state.alignment.fit(progress_update)
 	hide_status_indicators(status, progress_bar)
-	print(">>> find topic alignment: set dirty to false")
+	print_debug(">>> find topic alignment: set dirty to false")
 	st.session_state.is_dirty_alignment = False
 	return st.session_state.alignment
 
 # model helpers
 
 def update_file():
-	print("new_file={}".format(st.session_state.new_file.name))
+	print_debug("new_file={}".format(st.session_state.new_file.name))
 	if st.session_state.new_file.name is not st.session_state.file_name:
-		print(">>> update file: set is_dirty to true")
+		print_debug(">>> update file: set is_dirty to true")
 		st.session_state.is_dirty_alignment = True
 		st.session_state.file_name = st.session_state.new_file.name
 
 def update_stopwords():
-	print(">>> update stopwords: set is_dirty to true")
+	print_debug(">>> update stopwords: set is_dirty to true")
 	st.session_state.is_dirty_alignment = True
 
 def update_multiwords():
-	print(">>> update update_multiwords: set is_dirty to true")
+	print_debug(">>> update update_multiwords: set is_dirty to true")
 	st.session_state.is_dirty_alignment = True
 
 def update_number_of_topics():
-	print(">>> update_number_of_topics: set is_dirty to true")
+	print_debug(">>> update_number_of_topics: set is_dirty to true")
 	st.session_state.is_dirty_alignment = True
 
 def update_number_of_chunks():
-	print(">>> update_number_of_chunks: set is_dirty to true")
+	print_debug(">>> update_number_of_chunks: set is_dirty to true")
 	st.session_state.is_dirty_alignment = True
 
 def update_number_of_runs():
-	print(">>> update_number_of_runs: set is_dirty to true")
+	print_debug(">>> update_number_of_runs: set is_dirty to true")
 	st.session_state.is_dirty_alignment = True
 
 def update_selected_topic():
-	print(">>> update selected topic: {}".format(st.session_state.selected_topic))
+	print_debug(">>> update selected topic: {}".format(st.session_state.selected_topic))
 
 # view
 
@@ -162,7 +168,7 @@ def show_topic_model_runs(corpus, number_of_topics, number_of_chunks, number_of_
 				"Download keywords")
 			download_link_from_html(alignment.keywords[selected_topic].style
 				.apply(highlight_repeated_keywords, weights=alignment.weights[selected_topic], 
-					min_runs=int(number_of_runs * 0.75), axis=None).render(), 
+					min_runs=int(number_of_runs * 0.75), axis=None).to_html(), 
 				"tm-{}-{}-keywords.html".format(number_of_topics, selected_topic),
 				"Download keywords (with colors)")
 			download_link_from_csv(alignment.weights[selected_topic].to_csv(index=False),
