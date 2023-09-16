@@ -1,12 +1,12 @@
 import streamlit as st
 import topics
 
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def topic_model():
 	print("*** Initialzing the topic model")
 	return topics.TopicModel()
 
-@st.cache
+@st.cache_data
 def load_corpus(url):
 	print("*** Loading corpus: {}".format(url))
 	return tm.load_corpus(url)

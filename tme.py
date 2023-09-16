@@ -22,12 +22,12 @@ from topics import TopicModel, LDA
 
 # model
 
-@st.cache(allow_output_mutation=True, persist=True)
+@st.cache_data
 def load_corpus(url, stopwords, multiwords):
 	return tm.load_corpus(url, stopwords, multiwords)
 
-@st.cache(hash_funcs={LDA: id}, persist=True)
-def topic_model(corpus, number_of_topics, number_of_chunks):
+@st.cache_resource
+def topic_model(_corpus, number_of_topics, number_of_chunks):
 	return tm.fit(corpus, number_of_topics, number_of_chunks=number_of_chunks)
 
 def topics(model):

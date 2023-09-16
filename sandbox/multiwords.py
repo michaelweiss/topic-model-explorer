@@ -6,6 +6,7 @@ from nltk.corpus import stopwords
 import string
 from pyvis.network import Network
 import networkx as nx
+import math
 
 @st.cache(allow_output_mutation=True)
 def extract_keyphrases(text):
@@ -45,6 +46,7 @@ def max_weight(topic_graph):
 def keyphrase_graph(extractor, keyphrases, weight):
     # keyphrases is a list of phrase/phrase weight tuples
     phrases = [phrase[0] for phrase in keyphrases]
+    phrase_weights = {phrase: weight for phrase, weight in keyphrases}
 
     # subgraph of the topic graph with the phrases as nodes
     subgraph = nx.subgraph_view(extractor.graph, 
@@ -58,10 +60,17 @@ def keyphrase_graph(extractor, keyphrases, weight):
 
     # create a graph from the nodes and edges
     topic_graph = nx.Graph()
-    # topic_graph.add_nodes_from(nodes)
-    topic_graph.add_edges_from(edges)
+    nodes = nodes_from_edges(edges)
+    for node in nodes:
+        topic_graph.add_node(node, label=node, size=6*10*math.sqrt(phrase_weights[node]))
+    for edge in edges:
+        topic_graph.add_edge(edge[0], edge[1])
 
     return topic_graph
+
+def nodes_from_edges(edges):
+    nodes = [edge[0] for edge in edges] + [edge[1] for edge in edges]
+    return list(set(nodes))
 
 def surface_form(extractor, phrase):
     return ' '.join(extractor.candidates[phrase].surface_forms[0]).lower()
